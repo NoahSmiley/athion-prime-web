@@ -140,9 +140,16 @@ export function Sidebar({
           href="https://github.com/trevorkerney/Waverunner"
           target="_blank"
           rel="noreferrer"
-          className="text-[11px] text-muted-foreground/60 hover:text-foreground"
+          className="inline-flex items-center gap-2 text-[11px] text-muted-foreground/60 transition-colors hover:text-foreground"
+          title="Powered by Waverunner — fork of Trevor Kerney's project"
         >
-          Powered by Waverunner ↗
+          <img
+            src="/logo256.png"
+            alt=""
+            aria-hidden="true"
+            className="h-4 w-4 opacity-70 transition-opacity group-hover:opacity-100"
+          />
+          <span>Powered by Waverunner</span>
         </a>
       </div>
     </aside>

@@ -3,9 +3,21 @@
 @import "shadcn/tailwind.css";
 @custom-variant dark (&:is(.dark *));
 
+/* OpenAI Sans — same files served from athion.me. Match the athion design system. */
+@font-face { font-family: "OpenAI Sans"; src: url("/fonts/OpenAISans-Light.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "OpenAI Sans"; src: url("/fonts/OpenAISans-LightItalic.woff2") format("woff2"); font-weight: 300; font-style: italic; font-display: swap; }
+@font-face { font-family: "OpenAI Sans"; src: url("/fonts/OpenAISans-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "OpenAI Sans"; src: url("/fonts/OpenAISans-RegularItalic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "OpenAI Sans"; src: url("/fonts/OpenAISans-Medium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "OpenAI Sans"; src: url("/fonts/OpenAISans-MediumItalic.woff2") format("woff2"); font-weight: 500; font-style: italic; font-display: swap; }
+@font-face { font-family: "OpenAI Sans"; src: url("/fonts/OpenAISans-Semibold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "OpenAI Sans"; src: url("/fonts/OpenAISans-SemiboldItalic.woff2") format("woff2"); font-weight: 600; font-style: italic; font-display: swap; }
+@font-face { font-family: "OpenAI Sans"; src: url("/fonts/OpenAISans-Bold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "OpenAI Sans"; src: url("/fonts/OpenAISans-BoldItalic.woff2") format("woff2"); font-weight: 700; font-style: italic; font-display: swap; }
+
 @theme inline {
     --font-heading: var(--font-sans);
-    --font-sans: "Geist Variable", sans-serif;
+    --font-sans: "OpenAI Sans", sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,102 +58,107 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Athion design system palette. The light :root values are present so shadcn
+   primitives don't crash if used outside a dark context, but we force `.dark`
+   in main.tsx so the dark block is what actually renders. */
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --background: #ffffff;
+    --foreground: #060606;
+    --card: #f5f5f5;
+    --card-foreground: #060606;
+    --popover: #f5f5f5;
+    --popover-foreground: #060606;
+    --primary: #060606;
+    --primary-foreground: #ffffff;
+    --secondary: #e6e6e6;
+    --secondary-foreground: #060606;
+    --muted: #f0f0f0;
+    --muted-foreground: #555555;
+    --accent: #e6e6e6;
+    --accent-foreground: #060606;
+    --destructive: #cc4444;
+    --border: #d8d8d8;
+    --input: #d8d8d8;
+    --ring: #828282;
+    --chart-1: #c8c8c8;
+    --chart-2: #828282;
+    --chart-3: #555555;
+    --chart-4: #333333;
+    --chart-5: #1a1a1a;
+    --radius: 0.375rem;
+    --sidebar: #ffffff;
+    --sidebar-foreground: #060606;
+    --sidebar-primary: #060606;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #e6e6e6;
+    --sidebar-accent-foreground: #060606;
+    --sidebar-border: #d8d8d8;
+    --sidebar-ring: #828282;
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 18%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    /* Athion dark — sourced from /opt/athion/app/src/app/globals.css and
+       the AppTheme.swift reference values from the tvOS app. */
+    --background: #060606;
+    --foreground: #c8c8c8;
+    --card: #0a0a0a;
+    --card-foreground: #c8c8c8;
+    --popover: #0a0a0a;
+    --popover-foreground: #c8c8c8;
+    --primary: #ffffff;
+    --primary-foreground: #060606;
+    --secondary: #1a1a1a;
+    --secondary-foreground: #c8c8c8;
+    --muted: #1a1a1a;
+    --muted-foreground: #828282;
+    --accent: #1a1a1a;
+    --accent-foreground: #ffffff;
+    --destructive: #cc4444;
+    --border: #1a1a1a;
+    --input: #2a2a2a;
+    --ring: #555555;
+    --chart-1: #c8c8c8;
+    --chart-2: #828282;
+    --chart-3: #555555;
+    --chart-4: #2a2a2a;
+    --chart-5: #1a1a1a;
+    --sidebar: #060606;
+    --sidebar-foreground: #c8c8c8;
+    --sidebar-primary: #ffffff;
+    --sidebar-primary-foreground: #060606;
+    --sidebar-accent: #1a1a1a;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #1a1a1a;
+    --sidebar-ring: #555555;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    -webkit-user-select: none;
-    user-select: none;
-    }
+  }
   html {
     @apply font-sans;
     overflow: hidden;
-    }
+  }
+  ::selection {
+    background: #444;
+    color: #fff;
+  }
 
-  /* Scrollbar styling */
+  /* Thin scrollbars that match athion's quiet aesthetic */
   * {
     scrollbar-width: thin;
-    scrollbar-color: oklch(1 0 0 / 12%) transparent;
+    scrollbar-color: #2a2a2a transparent;
   }
-  .dark * {
-    scrollbar-color: oklch(1 0 0 / 15%) transparent;
-  }
-
-  /* Webkit scrollbar (for Tauri/WebView2) */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -150,29 +167,10 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: oklch(0 0 0 / 12%);
+    background: #2a2a2a;
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: oklch(0 0 0 / 22%);
+    background: #3a3a3a;
   }
-  .dark ::-webkit-scrollbar-thumb {
-    background: oklch(1 0 0 / 15%);
-  }
-  .dark ::-webkit-scrollbar-thumb:hover {
-    background: oklch(1 0 0 / 28%);
-  }
-}
-
-/* Player active — make webview transparent so mpv video shows through */
-html.player-active,
-html.player-active body,
-html.player-active #root {
-  background: transparent !important;
-}
-
-/* Marquee scroll — container defines visible width, child slides right→left */
-.marquee {
-  overflow: hidden;
-  white-space: nowrap;
 }
