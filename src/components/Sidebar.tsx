@@ -1,292 +1,49 @@
-import { useCallback, useRef, useState } from "react";
-import { invoke } from "@/lib/tauri-shim";
-import { listen } from "@/lib/tauri-shim";
-import { toast } from "sonner";
-import { Trash2, RefreshCw, FolderPlus, ChevronRight } from "lucide-react";
-import {
-  ContextMenu,
-  ContextMenuTrigger,
-  ContextMenuContent,
-  ContextMenuItem,
-} from "@/components/ui/context-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { CreateLibraryDialog } from "@/components/CreateLibraryDialog";
-import { CreatePlaylistDialog } from "@/components/CreatePlaylistDialog";
-import { PlayerDock } from "@/components/player/PlayerDock";
-import { PlayerState, PlayerActions } from "@/hooks/usePlayer";
-import { SidebarTree } from "@/components/SidebarTree";
-import { getComplicationsForLibrary } from "@/lib/complications";
-import type { ComplicationNode, PlaylistSummary } from "@/types";
-import { Library, ViewSpec } from "@/types";
+import type { ComponentType } from "react";
+import { Home, Film, Tv, Radio, Search, Settings as SettingsIcon } from "lucide-react";
+import { SIDEBAR_DESTINATIONS, type SidebarKind, type View } from "@/types";
 
-const MIN_WIDTH = 180;
-const MAX_WIDTH = 480;
-const DEFAULT_WIDTH = 256;
-
-interface SidebarProps {
-  libraries: Library[];
-  selectedLibrary: Library | null;
-  // The currently active view (library-root, movies-only, people-list, etc).
-  // Threaded through for the upcoming complication-tree UI; not yet rendered.
-  activeView: ViewSpec | null;
-  onSelectLibrary: (library: Library) => void;
-  onSelectView: (view: ViewSpec) => void;
-  onLibraryCreated: () => void;
-  onLibraryDeleted: () => void;
-  onLibraryRescanned: () => void;
-  /** Called after a playlist is created via the sidebar so App.tsx can invalidate caches. */
-  onPlaylistChanged: (libraryId: string) => void;
-  /** Per-library playlists to show as children of the "Playlists" sidebar node. */
-  sidebarPlaylists: Record<string, PlaylistSummary[]>;
-  playerState: PlayerState;
-  playerActions: PlayerActions;
-}
+const ICONS: Record<SidebarKind, ComponentType<{ className?: string }>> = {
+  home: Home,
+  movies: Film,
+  tvshows: Tv,
+  livetv: Radio,
+  search: Search,
+  settings: SettingsIcon,
+};
 
 export function Sidebar({
-  libraries,
-  selectedLibrary,
-  activeView,
-  onSelectLibrary,
-  onSelectView,
-  onLibraryCreated,
-  onLibraryDeleted,
-  onLibraryRescanned,
-  onPlaylistChanged,
-  sidebarPlaylists,
-  playerState,
-  playerActions,
-}: SidebarProps) {
-  const [width, setWidth] = useState(DEFAULT_WIDTH);
-  const [dragging, setDragging] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<Library | null>(null);
-  // Which library to create a playlist inside, or null when the dialog is closed.
-  const [createPlaylistFor, setCreatePlaylistFor] = useState<string | null>(null);
-  // Track libraries the user has explicitly collapsed; default is expanded.
-  const [collapsedLibs, setCollapsedLibs] = useState<Set<string>>(new Set());
-  const isResizing = useRef(false);
-
-  const renderNodeMenu = useCallback((node: ComplicationNode) => {
-    if (node.id === "playlists" && node.view?.kind === "playlists") {
-      const libId = node.view.libraryId;
-      return (
-        <ContextMenuItem onClick={() => setCreatePlaylistFor(libId)}>
-          <FolderPlus size={14} />
-          Create playlist
-        </ContextMenuItem>
-      );
-    }
-    return null;
-  }, []);
-
-  const toggleLibExpand = useCallback((libId: string) => {
-    setCollapsedLibs((prev) => {
-      const next = new Set(prev);
-      if (next.has(libId)) next.delete(libId);
-      else next.add(libId);
-      return next;
-    });
-  }, []);
-
-  const startResize = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    isResizing.current = true;
-    setDragging(true);
-
-    const onMouseMove = (e: MouseEvent) => {
-      if (!isResizing.current) return;
-      const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, e.clientX));
-      setWidth(newWidth);
-    };
-
-    const onMouseUp = () => {
-      isResizing.current = false;
-      setDragging(false);
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    };
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-  }, []);
-
-  const dockActive = playerState.isActive && playerState.isMinimized;
-
+  activeKind,
+  onChange,
+}: {
+  activeKind: View["kind"];
+  onChange: (view: View) => void;
+}) {
   return (
-    <div
-      className={`relative flex h-full flex-shrink-0 flex-col text-sidebar-foreground ${dragging ? "" : "transition-[width] duration-200"}`}
-      style={{ width }}
-    >
-      <aside className="flex flex-1 flex-col overflow-hidden bg-sidebar">
-        <div className="flex items-center justify-between border-b border-border px-4 py-2">
-          <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-            Your library
-          </span>
-        </div>
-        <ContextMenu>
-          <ContextMenuTrigger
-            render={<nav className="flex-1 overflow-y-auto p-1" />}
-          >
-          {libraries.length === 0 ? (
-            <p className="px-2 py-1.5 text-sm text-muted-foreground whitespace-nowrap">
-              No libraries yet
-            </p>
-          ) : (
-            libraries.map((lib) => {
-              const expanded = !collapsedLibs.has(lib.id);
-              const isSelected = selectedLibrary?.id === lib.id;
-              return (
-                <div key={lib.id} className="flex flex-col">
-                  <ContextMenu>
-                    <ContextMenuTrigger
-                      render={
-                        <button
-                          onClick={() => {
-                            onSelectLibrary(lib);
-                            setCollapsedLibs((prev) => {
-                              if (!prev.has(lib.id)) return prev;
-                              const next = new Set(prev);
-                              next.delete(lib.id);
-                              return next;
-                            });
-                          }}
-                        />
-                      }
-                      className={`flex w-full items-start gap-1 rounded-sm py-1.5 pr-2 pl-1 text-left text-sm ${
-                        isSelected
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-                      }`}
-                    >
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleLibExpand(lib.id);
-                        }}
-                        className="flex h-5 w-4 flex-shrink-0 items-center justify-center"
-                      >
-                        <ChevronRight
-                          size={12}
-                          className={`transition-transform ${expanded ? "rotate-90" : ""}`}
-                        />
-                      </span>
-                      <span className="min-w-0 flex-1 break-words">{lib.name}</span>
-                    </ContextMenuTrigger>
-                    <ContextMenuContent>
-                      <ContextMenuItem
-                        onClick={async () => {
-                          const toastId = toast.loading("Rescanning...");
-                          const unlisten = await listen<string>("scan-progress", (event) => {
-                            toast.loading(event.payload, { id: toastId });
-                          });
-                          try {
-                            await invoke("rescan_library", { libraryId: lib.id });
-                            toast.success("Rescan complete", { id: toastId });
-                            onLibraryRescanned();
-                          } catch (err) {
-                            toast.error(String(err), { id: toastId });
-                          } finally {
-                            unlisten();
-                          }
-                        }}
-                      >
-                        <RefreshCw size={14} />
-                        Rescan
-                      </ContextMenuItem>
-                      <ContextMenuItem
-                        onClick={() => setDeleteTarget(lib)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 size={14} />
-                        Delete
-                      </ContextMenuItem>
-                    </ContextMenuContent>
-                  </ContextMenu>
-                  {expanded && (
-                    <SidebarTree
-                      nodes={getComplicationsForLibrary(lib, sidebarPlaylists[lib.id] ?? [])}
-                      activeView={isSelected ? activeView : null}
-                      onSelectView={(view) => {
-                        onSelectView(view);
-                      }}
-                      renderNodeMenu={renderNodeMenu}
-                      depth={1}
-                    />
-                  )}
-                </div>
-              );
-            })
-          )}
-          </ContextMenuTrigger>
-          <ContextMenuContent>
-            <ContextMenuItem onClick={() => setDialogOpen(true)}>
-              <FolderPlus size={14} />
-              Create library
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
-      </aside>
-      {dockActive && <PlayerDock state={playerState} actions={playerActions} />}
-      {/* Right-edge border: bg-sidebar underlay + bg-border overlay so the
-          translucent border color blends consistently regardless of what sits
-          behind. Rendered after all siblings so it paints on top. */}
-      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-px bg-sidebar" />
-      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-px bg-border" />
-      <div
-        onMouseDown={startResize}
-        className="absolute top-0 bottom-0 right-0 z-10 w-2 translate-x-1/2 cursor-col-resize"
-      />
-      <CreateLibraryDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onCreated={onLibraryCreated}
-      />
-      <CreatePlaylistDialog
-        libraryId={createPlaylistFor}
-        open={createPlaylistFor !== null}
-        onOpenChange={(o) => { if (!o) setCreatePlaylistFor(null); }}
-        onCreated={() => {
-          if (createPlaylistFor) onPlaylistChanged(createPlaylistFor);
-        }}
-      />
-      <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Delete library?</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete "{deleteTarget?.name}"? This cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={async () => {
-                if (!deleteTarget) return;
-                try {
-                  await invoke("delete_library", { libraryId: deleteTarget.id });
-                  setDeleteTarget(null);
-                  onLibraryDeleted();
-                } catch (err) {
-                  toast.error(String(err));
-                }
-              }}
+    <aside className="flex h-full w-56 flex-shrink-0 flex-col border-r border-border bg-sidebar">
+      <div className="px-5 py-5">
+        <h1 className="text-sm font-medium tracking-wide text-foreground">Athion Prime</h1>
+      </div>
+      <nav className="flex-1 space-y-0.5 px-2">
+        {SIDEBAR_DESTINATIONS.map((d) => {
+          const Icon = ICONS[d.kind];
+          const active = activeKind === d.kind;
+          return (
+            <button
+              key={d.kind}
+              onClick={() => onChange({ kind: d.kind } as View)}
+              className={[
+                "flex w-full items-center gap-3 rounded px-3 py-2 text-left text-sm transition-colors",
+                active
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground",
+              ].join(" ")}
             >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+              <Icon className="h-4 w-4" />
+              <span>{d.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+    </aside>
   );
 }
