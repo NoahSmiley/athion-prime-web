@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { invoke, convertFileSrc } from "@tauri-apps/api/core";
+import { invoke, convertFileSrc } from "@/lib/tauri-shim";
 import "./App.css";
 import { Titlebar } from "@/components/Titlebar";
 import { Sidebar } from "@/components/Sidebar";
@@ -8,8 +8,8 @@ import { PlayerView } from "@/components/PlayerView";
 import { usePlayer } from "@/hooks/usePlayer";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import { relaunch } from "@tauri-apps/plugin-process";
-import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { relaunch } from "@/lib/tauri-shim";
+import { open as openDialog } from "@/lib/tauri-shim";
 import { Library, MediaEntry, EntriesResponse, BreadcrumbItem, ViewSpec, PersonSummary, PersonRole, PlaylistSummary, PlaylistContents, SortPreset } from "@/types";
 import { viewCacheKey, scopeKeyFor } from "@/lib/complications";
 

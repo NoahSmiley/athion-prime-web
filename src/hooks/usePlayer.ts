@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { listen, UnlistenFn } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { invoke } from "@/lib/tauri-shim";
+import { listen, UnlistenFn } from "@/lib/tauri-shim";
+import { getCurrentWindow } from "@/lib/tauri-shim";
 import { PlayerTrack, PlayerContext, EpisodeRef, ShowEpisodeFlat } from "../types";
 import { TITLEBAR_HEIGHT } from "../components/Titlebar";
 

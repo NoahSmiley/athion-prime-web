@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import { open } from "@tauri-apps/plugin-dialog";
+import { invoke } from "@/lib/tauri-shim";
+import { listen } from "@/lib/tauri-shim";
+import { open } from "@/lib/tauri-shim";
 import { toast } from "sonner";
 import {
   Dialog,

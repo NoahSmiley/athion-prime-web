@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { confirm } from "@tauri-apps/plugin-dialog";
-import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@/lib/tauri-shim";
+import { confirm } from "@/lib/tauri-shim";
+import { invoke } from "@/lib/tauri-shim";
 import { Minus, Square, X, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SettingsDialog } from "@/components/SettingsDialog";
@@ -32,7 +32,7 @@ export function Titlebar() {
   async function applyZoom(factor: number) {
     const clamped = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.round(factor * 100) / 100));
     try {
-      const { getCurrentWebviewWindow } = await import("@tauri-apps/api/webviewWindow");
+      const { getCurrentWebviewWindow } = await import("@/lib/tauri-shim");
       await getCurrentWebviewWindow().setZoom(clamped);
       zoomRef.current = clamped;
       setZoom(clamped);

@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@/lib/tauri-shim";
+import { listen } from "@/lib/tauri-shim";
 import { toast } from "sonner";
 import { Trash2, RefreshCw, FolderPlus, ChevronRight } from "lucide-react";
 import {

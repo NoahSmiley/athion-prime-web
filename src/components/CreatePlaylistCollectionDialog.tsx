@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { invoke, convertFileSrc } from "@tauri-apps/api/core";
-import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { invoke, convertFileSrc } from "@/lib/tauri-shim";
+import { open as openDialog } from "@/lib/tauri-shim";
 import { toast } from "sonner";
 import { ImageIcon, X } from "lucide-react";
 import {

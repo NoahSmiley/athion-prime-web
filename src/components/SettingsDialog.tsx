@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { relaunch } from "@tauri-apps/plugin-process";
+import { invoke } from "@/lib/tauri-shim";
+import { relaunch } from "@/lib/tauri-shim";
 import { toast } from "sonner";
 import {
   Dialog,

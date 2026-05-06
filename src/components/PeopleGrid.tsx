@@ -1,4 +1,4 @@
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { convertFileSrc } from "@/lib/tauri-shim";
 import { User } from "lucide-react";
 import type { PersonSummary } from "@/types";
 
