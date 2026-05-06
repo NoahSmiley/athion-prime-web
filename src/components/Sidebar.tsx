@@ -147,7 +147,7 @@ export function Sidebar({
             src="/logo256.png"
             alt=""
             aria-hidden="true"
-            className="h-4 w-4 opacity-70 transition-opacity group-hover:opacity-100"
+            className="h-4 w-4 opacity-60 grayscale transition-opacity hover:opacity-100"
           />
           <span>Powered by Waverunner</span>
         </a>
