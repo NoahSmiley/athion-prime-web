@@ -83,6 +83,14 @@ export interface JellyfinClient {
   // URLs
   imageUrl(itemId: string, opts?: ImageUrlOpts): string;
   hlsUrl(itemId: string, mediaSourceId?: string): string;
+  /**
+   * Resolve the right HLS URL for this client by doing a PlaybackInfo
+   * round-trip with our DeviceProfile. Yields significantly better
+   * quality than the synchronous hlsUrl() because the server picks the
+   * transcoding params (resolution, bitrate, codec profile) based on
+   * what the client says it can handle.
+   */
+  getPlaybackUrl(itemId: string, opts?: { maxBitrate?: number }): Promise<string>;
 
   // Playback reporting
   reportPlaybackStart(itemId: string, positionTicks: number): Promise<void>;
@@ -205,9 +213,8 @@ export function createJellyfinClient(session: JellyfinSession): JellyfinClient {
     },
 
     hlsUrl(itemId, mediaSourceId) {
-      // Jellyfin's master.m3u8 requires a MediaSourceId. For single-source items
-      // (most movies/episodes) it equals the ItemId. Multi-source files would
-      // need a PlaybackInfo round-trip first; we'll add that when we hit one.
+      // Synchronous fallback — used if PlaybackInfo fails. For best quality
+      // prefer getPlaybackUrl() which lets the server pick resolution/bitrate.
       const url = new URL(`/Videos/${encodeURIComponent(itemId)}/master.m3u8`, session.jellyfinUrl);
       url.searchParams.set("userId", session.userId);
       url.searchParams.set("deviceId", session.deviceId);
@@ -215,7 +222,80 @@ export function createJellyfinClient(session: JellyfinSession): JellyfinClient {
       url.searchParams.set("MediaSourceId", mediaSourceId ?? itemId);
       url.searchParams.set("VideoCodec", "h264");
       url.searchParams.set("AudioCodec", "aac");
+      url.searchParams.set("MaxStreamingBitrate", "40000000");
       return url.toString();
+    },
+
+    async getPlaybackUrl(itemId, { maxBitrate = 40_000_000 } = {}) {
+      const profile = {
+        Name: "Athion Prime Web",
+        MaxStreamingBitrate: maxBitrate,
+        MaxStaticBitrate: 100_000_000,
+        MusicStreamingTranscodingBitrate: 192_000,
+        DirectPlayProfiles: [
+          {
+            Container: "mp4,m4v",
+            Type: "Video",
+            VideoCodec: "h264,hevc,vp9,av1",
+            AudioCodec: "aac,mp3,opus,flac",
+          },
+          { Container: "webm", Type: "Video", VideoCodec: "vp8,vp9,av1", AudioCodec: "vorbis,opus" },
+        ],
+        TranscodingProfiles: [
+          {
+            Container: "ts",
+            Type: "Video",
+            Protocol: "hls",
+            VideoCodec: "h264",
+            AudioCodec: "aac,mp3",
+            BreakOnNonKeyFrames: true,
+          },
+        ],
+        ContainerProfiles: [],
+        CodecProfiles: [],
+        SubtitleProfiles: [{ Format: "vtt", Method: "External" }],
+      };
+
+      const params = new URLSearchParams({
+        UserId: session.userId,
+        MaxStreamingBitrate: String(maxBitrate),
+      });
+      const res = await fetch(
+        `${session.jellyfinUrl}/Items/${encodeURIComponent(itemId)}/PlaybackInfo?${params}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `MediaBrowser Token=${session.accessToken}`,
+          },
+          body: JSON.stringify({ DeviceProfile: profile }),
+        }
+      );
+      if (!res.ok) {
+        throw new Error(`PlaybackInfo returned ${res.status}`);
+      }
+      const data = (await res.json()) as {
+        PlaySessionId?: string;
+        MediaSources?: Array<{
+          Id?: string;
+          TranscodingUrl?: string;
+          SupportsDirectStream?: boolean;
+          DirectStreamUrl?: string;
+          Container?: string;
+        }>;
+      };
+      const ms = data.MediaSources?.[0];
+      if (!ms) throw new Error("PlaybackInfo returned no MediaSources");
+
+      // Prefer DirectStream when supported (no transcoding = original quality)
+      if (ms.SupportsDirectStream && ms.DirectStreamUrl) {
+        return new URL(ms.DirectStreamUrl, session.jellyfinUrl).toString();
+      }
+      if (ms.TranscodingUrl) {
+        return new URL(ms.TranscodingUrl, session.jellyfinUrl).toString();
+      }
+      // Last-resort: build a master.m3u8 by hand
+      return this.hlsUrl(itemId, ms.Id);
     },
 
     async reportPlaybackStart(itemId, positionTicks) {

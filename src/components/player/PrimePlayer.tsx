@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import Hls from "hls.js";
 import { ChevronRight, Maximize, Minimize, Pause, Play, X } from "lucide-react";
 import { useJellyfin } from "@/components/AuthProvider";
@@ -35,7 +35,26 @@ export function PrimePlayer({
   const itemId = ctx.item.Id ?? "";
   const startPositionTicks = ctx.item.UserData?.PlaybackPositionTicks ?? 0;
   const chapters = ctx.item.Chapters ?? [];
-  const url = useMemo(() => (itemId ? client.hlsUrl(itemId) : null), [client, itemId]);
+  const [url, setUrl] = useState<string | null>(null);
+
+  // Resolve the playback URL via PlaybackInfo (gets the right MediaSourceId,
+  // PlaySessionId, and a transcoding URL the server picked for our profile).
+  useEffect(() => {
+    if (!itemId) return;
+    let cancelled = false;
+    setUrl(null);
+    client
+      .getPlaybackUrl(itemId)
+      .then((resolved) => {
+        if (!cancelled) setUrl(resolved);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [client, itemId]);
 
   // Source-of-truth: which chapter are we currently in?
   const activeChapter = useMemo(() => classifyActiveChapter(chapters, currentTime), [chapters, currentTime]);
