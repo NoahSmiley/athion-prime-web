@@ -35,6 +35,36 @@ export type {
 
 const CLIENT_INFO = { name: "Athion Prime", version: "1.0.0" };
 
+interface CodecSupport {
+  hevc: boolean;
+  av1: boolean;
+  vp9: boolean;
+}
+
+let cachedCaps: CodecSupport | null = null;
+
+/**
+ * Probe the browser's MSE codec support so we only ask Jellyfin for codecs
+ * the player can actually decode. Without this, declaring HEVC in the
+ * DeviceProfile causes Jellyfin to remux a HEVC source for browsers that
+ * can't play it — hls.js then errors with manifestIncompatibleCodecsError.
+ */
+function detectCodecSupport(): CodecSupport {
+  if (cachedCaps) return cachedCaps;
+  if (typeof MediaSource === "undefined") {
+    return (cachedCaps = { hevc: false, av1: false, vp9: false });
+  }
+  const probe = (type: string) => MediaSource.isTypeSupported(type);
+  cachedCaps = {
+    hevc:
+      probe('video/mp4; codecs="hvc1.1.6.L93.B0"') ||
+      probe('video/mp4; codecs="hev1.1.6.L93.B0"'),
+    av1: probe('video/mp4; codecs="av01.0.05M.08"'),
+    vp9: probe('video/webm; codecs="vp9"') || probe('video/mp4; codecs="vp09.00.10.08"'),
+  };
+  return cachedCaps;
+}
+
 const DEFAULT_FIELDS: ItemFields[] = [
   "Overview" as ItemFields,
   "Genres" as ItemFields,
@@ -89,8 +119,10 @@ export interface JellyfinClient {
    * quality than the synchronous hlsUrl() because the server picks the
    * transcoding params (resolution, bitrate, codec profile) based on
    * what the client says it can handle.
+   * Set `forceH264: true` to drop HEVC from the profile after a codec
+   * mismatch — useful as a one-shot fallback from the player.
    */
-  getPlaybackUrl(itemId: string, opts?: { maxBitrate?: number }): Promise<string>;
+  getPlaybackUrl(itemId: string, opts?: { maxBitrate?: number; forceH264?: boolean }): Promise<string>;
 
   // Playback reporting
   reportPlaybackStart(itemId: string, positionTicks: number): Promise<void>;
@@ -226,33 +258,37 @@ export function createJellyfinClient(session: JellyfinSession): JellyfinClient {
       return url.toString();
     },
 
-    async getPlaybackUrl(itemId, { maxBitrate = 80_000_000 } = {}) {
-      // Declaring HEVC support in the TranscodingProfile lets Jellyfin pick
-      // codec-copy/remux when the source is already HEVC — no lossy 10-bit→8-bit
-      // re-encode, no quality loss, ~half the bitrate of an h264 transcode.
-      // hls.js (1.5+) plays HEVC HLS when the browser has native HEVC decode
-      // (Safari, Chrome 107+ on macOS/Windows w/ HW decode, Edge).
+    async getPlaybackUrl(itemId, { maxBitrate = 80_000_000, forceH264 = false } = {}) {
+      const caps = forceH264
+        ? { hevc: false, av1: false, vp9: false }
+        : detectCodecSupport();
+      const videoCodecs = ["h264"];
+      if (caps.hevc) videoCodecs.push("hevc");
+      if (caps.av1) videoCodecs.push("av1");
+      if (caps.vp9) videoCodecs.push("vp9");
+      // When source codec matches one in this list, Jellyfin codec-copies
+      // (remux only) instead of re-encoding — preserves source quality.
+      const transcodeVideoCodecs = videoCodecs.join(",");
+      const directPlayVideoCodecs = videoCodecs.join(",");
+
+      // EAC3/AC3 audio decoding is widely supported in modern browsers; falls
+      // back to AAC transcode automatically if not.
+      const audioCodecs = "aac,mp3,opus,flac,ac3,eac3";
+
       const profile = {
         Name: "Athion Prime Web",
         MaxStreamingBitrate: maxBitrate,
         MaxStaticBitrate: 100_000_000,
         MusicStreamingTranscodingBitrate: 192_000,
         DirectPlayProfiles: [
-          {
-            Container: "mp4,m4v,webm",
-            Type: "Video",
-            VideoCodec: "h264,hevc,vp9,av1",
-            AudioCodec: "aac,mp3,opus,flac,ac3,eac3",
-          },
+          { Container: "mp4,m4v,webm", Type: "Video", VideoCodec: directPlayVideoCodecs, AudioCodec: audioCodecs },
         ],
         TranscodingProfiles: [
           {
             Container: "ts",
             Type: "Video",
             Protocol: "hls",
-            // h264 first so browsers without HEVC fall back; Jellyfin still
-            // copies hevc when source is hevc and the codec is in this list.
-            VideoCodec: "h264,hevc",
+            VideoCodec: transcodeVideoCodecs,
             AudioCodec: "aac,mp3,ac3,eac3",
             BreakOnNonKeyFrames: true,
           },

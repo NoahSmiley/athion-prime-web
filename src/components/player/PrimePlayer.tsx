@@ -36,15 +36,17 @@ export function PrimePlayer({
   const startPositionTicks = ctx.item.UserData?.PlaybackPositionTicks ?? 0;
   const chapters = ctx.item.Chapters ?? [];
   const [url, setUrl] = useState<string | null>(null);
+  // If hls.js fires an incompatible-codec error, force an h264 retry by
+  // bumping this — getPlaybackUrl() then asks Jellyfin for an h264 transcode.
+  const [forceH264, setForceH264] = useState(false);
 
-  // Resolve the playback URL via PlaybackInfo (gets the right MediaSourceId,
-  // PlaySessionId, and a transcoding URL the server picked for our profile).
+  // Resolve the playback URL via PlaybackInfo.
   useEffect(() => {
     if (!itemId) return;
     let cancelled = false;
     setUrl(null);
     client
-      .getPlaybackUrl(itemId)
+      .getPlaybackUrl(itemId, forceH264 ? { forceH264: true } : undefined)
       .then((resolved) => {
         if (!cancelled) setUrl(resolved);
       })
@@ -54,7 +56,7 @@ export function PrimePlayer({
     return () => {
       cancelled = true;
     };
-  }, [client, itemId]);
+  }, [client, itemId, forceH264]);
 
   // Source-of-truth: which chapter are we currently in?
   const activeChapter = useMemo(() => classifyActiveChapter(chapters, currentTime), [chapters, currentTime]);
@@ -70,6 +72,20 @@ export function PrimePlayer({
       hls.loadSource(url);
       hls.attachMedia(video);
       hls.on(Hls.Events.ERROR, (_e, data) => {
+        // Codec incompatibility — typically HEVC manifested when the browser
+        // can't decode it. Re-fetch with forceH264 to get a transcode.
+        if (
+          data.fatal &&
+          (data.details === "manifestIncompatibleCodecsError" ||
+            data.details === "bufferIncompatibleCodecsError")
+        ) {
+          if (!forceH264) {
+            // eslint-disable-next-line no-console
+            console.warn("[player] codec mismatch, retrying with h264-only profile");
+            setForceH264(true);
+            return;
+          }
+        }
         if (data.fatal) {
           setError(`Playback error: ${data.type} / ${data.details}`);
         }
