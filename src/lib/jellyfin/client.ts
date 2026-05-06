@@ -226,7 +226,12 @@ export function createJellyfinClient(session: JellyfinSession): JellyfinClient {
       return url.toString();
     },
 
-    async getPlaybackUrl(itemId, { maxBitrate = 40_000_000 } = {}) {
+    async getPlaybackUrl(itemId, { maxBitrate = 80_000_000 } = {}) {
+      // Declaring HEVC support in the TranscodingProfile lets Jellyfin pick
+      // codec-copy/remux when the source is already HEVC — no lossy 10-bit→8-bit
+      // re-encode, no quality loss, ~half the bitrate of an h264 transcode.
+      // hls.js (1.5+) plays HEVC HLS when the browser has native HEVC decode
+      // (Safari, Chrome 107+ on macOS/Windows w/ HW decode, Edge).
       const profile = {
         Name: "Athion Prime Web",
         MaxStreamingBitrate: maxBitrate,
@@ -234,20 +239,21 @@ export function createJellyfinClient(session: JellyfinSession): JellyfinClient {
         MusicStreamingTranscodingBitrate: 192_000,
         DirectPlayProfiles: [
           {
-            Container: "mp4,m4v",
+            Container: "mp4,m4v,webm",
             Type: "Video",
             VideoCodec: "h264,hevc,vp9,av1",
-            AudioCodec: "aac,mp3,opus,flac",
+            AudioCodec: "aac,mp3,opus,flac,ac3,eac3",
           },
-          { Container: "webm", Type: "Video", VideoCodec: "vp8,vp9,av1", AudioCodec: "vorbis,opus" },
         ],
         TranscodingProfiles: [
           {
             Container: "ts",
             Type: "Video",
             Protocol: "hls",
-            VideoCodec: "h264",
-            AudioCodec: "aac,mp3",
+            // h264 first so browsers without HEVC fall back; Jellyfin still
+            // copies hevc when source is hevc and the codec is in this list.
+            VideoCodec: "h264,hevc",
+            AudioCodec: "aac,mp3,ac3,eac3",
             BreakOnNonKeyFrames: true,
           },
         ],
