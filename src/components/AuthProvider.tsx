@@ -1,14 +1,17 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { fetchJellyfinSession, redirectToLogin, type JellyfinSession } from "@/lib/auth/session";
+import { createJellyfinClient, type JellyfinClient } from "@/lib/jellyfin/client";
 
 interface AuthState {
   session: JellyfinSession | null;
+  client: JellyfinClient | null;
   status: "loading" | "ready" | "unauthenticated" | "error";
   error: string | null;
 }
 
 const AuthContext = createContext<AuthState>({
   session: null,
+  client: null,
   status: "loading",
   error: null,
 });
@@ -18,17 +21,35 @@ export function useAuth(): AuthState {
 }
 
 /**
+ * Convenience hook for components that only need the Jellyfin client. Throws
+ * if called outside <AuthProvider> (or while still loading) — `AuthProvider`
+ * blocks render until the client is ready, so child components can rely on it.
+ */
+export function useJellyfin(): JellyfinClient {
+  const { client } = useContext(AuthContext);
+  if (!client) {
+    throw new Error("useJellyfin called outside an AuthProvider with a ready session");
+  }
+  return client;
+}
+
+/**
  * Resolves a Jellyfin session before rendering children. On 401:
  *   - In production (running under athion.me), redirects to the athion login page.
  *   - In dev, shows a guidance card (so the developer can set VITE_PRIME_DEV_SESSION
  *     instead of being thrown into a redirect loop).
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({
+  const [state, setState] = useState<Omit<AuthState, "client">>({
     session: null,
     status: "loading",
     error: null,
   });
+
+  const client = useMemo(
+    () => (state.session ? createJellyfinClient(state.session) : null),
+    [state.session]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -81,7 +102,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ ...state, client }}>{children}</AuthContext.Provider>
+  );
 }
 
 function FullscreenMessage({ title, body }: { title: string; body?: string }) {
