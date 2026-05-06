@@ -82,7 +82,7 @@ export interface JellyfinClient {
 
   // URLs
   imageUrl(itemId: string, opts?: ImageUrlOpts): string;
-  hlsUrl(itemId: string): string;
+  hlsUrl(itemId: string, mediaSourceId?: string): string;
 
   // Playback reporting
   reportPlaybackStart(itemId: string, positionTicks: number): Promise<void>;
@@ -204,15 +204,17 @@ export function createJellyfinClient(session: JellyfinSession): JellyfinClient {
       return url.toString();
     },
 
-    hlsUrl(itemId) {
+    hlsUrl(itemId, mediaSourceId) {
+      // Jellyfin's master.m3u8 requires a MediaSourceId. For single-source items
+      // (most movies/episodes) it equals the ItemId. Multi-source files would
+      // need a PlaybackInfo round-trip first; we'll add that when we hit one.
       const url = new URL(`/Videos/${encodeURIComponent(itemId)}/master.m3u8`, session.jellyfinUrl);
       url.searchParams.set("userId", session.userId);
       url.searchParams.set("deviceId", session.deviceId);
       url.searchParams.set("api_key", session.accessToken);
-      // Defaults; tweak per-quality preference later.
-      url.searchParams.set("VideoCodec", "h264,hevc");
-      url.searchParams.set("AudioCodec", "aac,mp3");
-      url.searchParams.set("Container", "ts");
+      url.searchParams.set("MediaSourceId", mediaSourceId ?? itemId);
+      url.searchParams.set("VideoCodec", "h264");
+      url.searchParams.set("AudioCodec", "aac");
       return url.toString();
     },
 

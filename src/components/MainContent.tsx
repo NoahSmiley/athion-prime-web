@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useJellyfin } from "@/components/AuthProvider";
 import { PosterCard } from "@/components/PosterCard";
 import { SortControls } from "@/components/SortControls";
+import { ItemDetail } from "@/components/views/ItemDetail";
+import { SeriesDetail } from "@/components/views/SeriesDetail";
 import { loadScopeState } from "@/lib/sort-presets";
 import type {
   BaseItemDto,
@@ -19,9 +21,11 @@ const KIND_TO_INCLUDE: Record<LibraryKind, BaseItemKind> = {
 export function MainContent({
   view,
   onNavigate,
+  onPlay,
 }: {
   view: View;
   onNavigate: (view: View) => void;
+  onPlay: (item: BaseItemDto) => void;
 }) {
   switch (view.kind) {
     case "home":
@@ -33,9 +37,9 @@ export function MainContent({
     case "settings":
       return <SettingsView />;
     case "item":
-      return <ItemDetail item={view.item} />;
+      return <ItemDetail item={view.item} onPlay={onPlay} />;
     case "series":
-      return <Placeholder title={view.series.Name ?? "Series"} body="Seasons + episodes UI lands in Phase 4." />;
+      return <SeriesDetail series={view.series} onPlay={onPlay} />;
     case "library":
       return <LibraryView view={view} onNavigate={onNavigate} />;
     case "genre":
@@ -100,8 +104,6 @@ function GenresList({
     let cancelled = false;
     setGenres(null);
     setError(null);
-    // Fetch all items, then aggregate genres client-side. Jellyfin has /Genres
-    // but it's not user-scoped to a media kind cleanly; this is simpler for v1.
     client
       .getItems({
         includeItemTypes: [KIND_TO_INCLUDE[library]],
@@ -271,46 +273,7 @@ function ItemGrid({
 }
 
 // ---------------------------------------------------------------------------
-// Item detail (basic; full detail UI + player is Phase 4)
-// ---------------------------------------------------------------------------
-
-function ItemDetail({ item }: { item: BaseItemDto }) {
-  const client = useJellyfin();
-  const tag = item.BackdropImageTags?.[0] ?? item.ImageTags?.Primary;
-  const backdrop = item.Id
-    ? client.imageUrl(item.Id, {
-        type: item.BackdropImageTags?.[0] ? ("Backdrop" as never) : ("Primary" as never),
-        maxWidth: 1600,
-        tag,
-      })
-    : null;
-
-  return (
-    <div className="relative h-full overflow-auto">
-      {backdrop ? (
-        <div
-          className="h-72 w-full bg-cover bg-center opacity-30"
-          style={{ backgroundImage: `url(${backdrop})` }}
-        />
-      ) : null}
-      <div className="px-10 py-8">
-        <h1 className="text-3xl font-medium text-foreground">{item.Name}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {[item.Type, item.ProductionYear].filter(Boolean).join(" · ")}
-        </p>
-        {item.Overview ? (
-          <p className="mt-6 max-w-2xl text-sm leading-relaxed text-foreground/80">{item.Overview}</p>
-        ) : null}
-        <p className="mt-10 text-xs text-muted-foreground">
-          Detail view + player coming in Phase 4. Item id: <code>{item.Id}</code>
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Placeholder + Settings stubs
+// Settings stub + Placeholder
 // ---------------------------------------------------------------------------
 
 function SettingsView() {
@@ -319,7 +282,7 @@ function SettingsView() {
       <div className="max-w-md text-center">
         <h2 className="mb-2 text-base font-medium text-foreground">Settings</h2>
         <p className="text-sm text-muted-foreground">
-          Account info, playback quality, logout. Coming in Phase 7.
+          Account info, playback quality, logout. Coming soon.
         </p>
         <p className="mt-6 text-[11px] text-muted-foreground/70">
           Athion Prime is built on Trevor Kerney's{" "}
