@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { TopNav } from "@/components/TopNav";
 import { MainContent } from "@/components/MainContent";
 import { BreadcrumbHeader } from "@/components/BreadcrumbHeader";
+import { PoweredByCredit } from "@/components/PoweredByCredit";
 import { useTheme } from "@/lib/use-theme";
 import type { PlaybackContext } from "@/components/player/PrimePlayer";
 import type { View } from "@/types";
@@ -102,6 +103,9 @@ function App() {
           />
         </Suspense>
       ) : null}
+      {/* Bottom-right credit only in spare — Hybrid's Sidebar already has
+          its own footer credit, so we'd double up. */}
+      {isSpare ? <PoweredByCredit /> : null}
     </div>
   );
 }

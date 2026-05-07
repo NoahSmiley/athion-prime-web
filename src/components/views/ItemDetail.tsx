@@ -238,24 +238,10 @@ function SpareItemDetail({
           ~30% down the column. Adds atmosphere without dominating like a
           50vh hero would. Sits under the article. */}
       {backdrop ? (
-        <>
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-[50vh] bg-cover bg-center opacity-25"
-            style={{
-              backgroundImage: `url(${backdrop})`,
-              maskImage: "linear-gradient(to bottom, black 0%, black 30%, transparent 95%)",
-              WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 30%, transparent 95%)",
-            }}
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-[50vh] bg-gradient-to-b from-transparent via-background/50 to-background"
-          />
-        </>
+        <SpareBackdrop src={backdrop} />
       ) : null}
 
-      <article className="relative mx-auto flex max-w-[700px] flex-col gap-5 py-10 text-[13px]">
+      <article className="relative z-10 mx-auto flex max-w-[700px] flex-col gap-5 pt-16 pb-12 text-[13px]">
         <header className="flex flex-col gap-2">
           <h1 className="text-[18px] font-medium text-foreground">{item.Name}</h1>
           {meta.length > 0 ? (

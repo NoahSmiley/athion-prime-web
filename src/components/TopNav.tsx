@@ -90,82 +90,25 @@ export function TopNav({
             height: 24,
           }}
         >
-          <div className="inline-flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => onChange({ kind: "home" })}
-              onMouseEnter={() => setHoverKey(null)}
-              style={{
-                background: "none",
-                border: "none",
-                padding: 0,
-                cursor: "pointer",
-                fontFamily: "inherit",
-                color: "#fff",
-                fontWeight: 500,
-                display: "inline-flex",
-                alignItems: "center",
-                lineHeight: 1,
-              }}
-            >
-              Athion Prime
-            </button>
-            {/* Tiny credit to the upstream Waverunner project (Trevor Kerney's
-                fork that this SPA descends from). 'powered by' / 'Waverunner'
-                are stacked on two tight lines so the credit reads as a small
-                vertical block; the W-wave mark sits at the right end at the
-                wordmark's cap height. */}
-            <a
-              href="https://github.com/trevorkerney/Waverunner"
-              target="_blank"
-              rel="noreferrer"
-              title="Powered by Waverunner — fork of Trevor Kerney's project"
-              style={{
-                color: "#555",
-                textDecoration: "none",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                transition: "color 0.15s, opacity 0.15s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#828282";
-                const img = e.currentTarget.querySelector("img");
-                if (img) img.style.opacity = "1";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "#555";
-                const img = e.currentTarget.querySelector("img");
-                if (img) img.style.opacity = "0.6";
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 8,
-                  lineHeight: 1.1,
-                  letterSpacing: 0.2,
-                  textAlign: "right",
-                  display: "inline-flex",
-                  flexDirection: "column",
-                }}
-              >
-                <span>powered by</span>
-                <span>Waverunner</span>
-              </span>
-              <img
-                src="/logo256.png"
-                alt=""
-                aria-hidden="true"
-                style={{
-                  height: 14,
-                  width: 14,
-                  opacity: 0.6,
-                  filter: "grayscale(1)",
-                  transition: "opacity 0.15s",
-                }}
-              />
-            </a>
-          </div>
+          <button
+            type="button"
+            onClick={() => onChange({ kind: "home" })}
+            onMouseEnter={() => setHoverKey(null)}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              color: "#fff",
+              fontWeight: 500,
+              display: "inline-flex",
+              alignItems: "center",
+              lineHeight: 1,
+            }}
+          >
+            Athion Prime
+          </button>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             {SIDEBAR_DESTINATIONS.filter((d) => d.kind !== "home").map((d) => {
               const isTracked = trackKey === d.kind;
