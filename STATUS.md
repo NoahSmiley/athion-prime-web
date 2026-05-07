@@ -60,7 +60,7 @@ Future deploy lives at `prime.athion.me` on Proxmox CT 111
 | 4 | Item detail panel, series detail with seasons + episodes, `hls.js` player overlay, PlaybackInfo round-trip, codec capability detection + force-h264 retry, playback reporting, Skip Intro / Next Episode chapter buttons, auto-advance on `ended` | ✅ |
 | 5 | Home view (Continue Watching / Latest Movies / Latest Shows / Collections / Live TV row); Search view | ✅ |
 | 6 | Live TV — Xtream proxy on athion.me, channel browser + EPG, channel playback through hls.js | ✅ |
-| 7 leftover | Settings page rebuild (account info, quality preference, logout). Design system already shipped early. | ⏳ pending |
+| 7 leftover | Settings page rebuild (account info, quality preference, logout). Design system already shipped early. | ✅ |
 | 8 | Deploy: nginx on CT 111, build/rsync script, `prime.athion.me` DNS + 443 port forward | ⏳ pending |
 
 ---
@@ -254,7 +254,30 @@ Shipped:
 Verified end-to-end: 8 sections render, Entertainment lists 424 real
 channels, A&E HD plays at 1280×720 in 4–5s.
 
-### Phase 7 leftover — Settings page rebuild   [START HERE]
+### Phase 7 leftover — Settings page rebuild   [DONE 2026-05-06]
+
+Shipped:
+- `src/lib/settings.ts` — typed `PrimeSettings` (currently just `quality`),
+  `loadSettings()` / `saveSettings()` against localStorage key
+  `athion-prime:settings`, with defensive parsing that drops unknown
+  keys instead of throwing. `maxBitrateFor(quality)` returns the cap.
+- `src/components/views/SettingsView.tsx` — Account section reading from
+  the live session (`username`, deviceId), Playback quality section with
+  three click-to-save buttons (Local 4K Remux 80 Mbps / Remote 40 Mbps /
+  Remote 10 Mbps) and a brief "Saved" flash, Session section with a
+  Sign-out button, Credits section.
+- `src/components/player/PrimePlayer.tsx` — `getPlaybackUrl()` now uses
+  `maxBitrateFor(loadSettings().quality)` so the user's preference
+  controls Jellyfin's transcode ceiling. forceH264 retries still go
+  through getPlaybackUrl's own 1080p safety cap.
+- `src/components/MainContent.tsx` — wires the new view; old in-file
+  stub deleted.
+- **athion.me** — `/api/auth/logout` now serves CORS for
+  `prime.athion.me` and `localhost:1420` so the in-app sign-out works
+  cross-origin. Production clears the shared `.athion.me` cookie so
+  Prime / Press / athion.me all sign out together.
+
+### Phase 8 — Deploy   [START HERE]
 
 Two halves:
 
@@ -294,7 +317,7 @@ under `src/components/views/SettingsView.tsx`:
 
 Wire into MainContent's dispatch (replace stub `SettingsView`).
 
-### Phase 8 — Deploy
+### Phase 8 — Deploy (detail)
 
 CT 111 `prime-web` (192.168.0.148) is provisioned but empty. Steps:
 
@@ -384,4 +407,4 @@ the test content for the dev session.
 
 ---
 
-_Last updated: 2026-05-06 (Phase 6 shipped — Live TV is end-to-end; ready for Phase 7 Settings)._
+_Last updated: 2026-05-06 (Phase 7 shipped — Settings live with quality wired into player; ready for Phase 8 Deploy)._

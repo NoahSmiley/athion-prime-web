@@ -7,6 +7,7 @@ import { SeriesDetail } from "@/components/views/SeriesDetail";
 import { HomeView } from "@/components/views/HomeView";
 import { SearchView } from "@/components/views/SearchView";
 import { LiveTvView } from "@/components/views/LiveTvView";
+import { SettingsView } from "@/components/views/SettingsView";
 import { loadScopeState } from "@/lib/sort-presets";
 import type {
   BaseItemDto,
@@ -276,33 +277,8 @@ function ItemGrid({
 }
 
 // ---------------------------------------------------------------------------
-// Settings stub + Placeholder
+// Placeholder
 // ---------------------------------------------------------------------------
-
-function SettingsView() {
-  return (
-    <div className="flex h-full items-center justify-center p-10">
-      <div className="max-w-md text-center">
-        <h2 className="mb-2 text-base font-medium text-foreground">Settings</h2>
-        <p className="text-sm text-muted-foreground">
-          Account info, playback quality, logout. Coming soon.
-        </p>
-        <p className="mt-6 text-[11px] text-muted-foreground/70">
-          Athion Prime is built on Trevor Kerney's{" "}
-          <a
-            className="underline hover:text-foreground"
-            href="https://github.com/trevorkerney/Waverunner"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Waverunner
-          </a>
-          .
-        </p>
-      </div>
-    </div>
-  );
-}
 
 function Placeholder({ title, body }: { title: string; body?: string }) {
   return (

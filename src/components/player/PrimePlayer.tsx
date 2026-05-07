@@ -3,6 +3,7 @@ import Hls from "hls.js";
 import { ChevronRight, Maximize, Minimize, Pause, Play, X } from "lucide-react";
 import { useJellyfin } from "@/components/AuthProvider";
 import type { BaseItemDto, ChapterInfo } from "@/lib/jellyfin/types";
+import { loadSettings, maxBitrateFor } from "@/lib/settings";
 
 const TICKS_PER_SECOND = 10_000_000;
 const PROGRESS_INTERVAL_MS = 5000;
@@ -40,13 +41,18 @@ export function PrimePlayer({
   // bumping this — getPlaybackUrl() then asks Jellyfin for an h264 transcode.
   const [forceH264, setForceH264] = useState(false);
 
-  // Resolve the playback URL via PlaybackInfo.
+  // Resolve the playback URL via PlaybackInfo, capping bitrate by the user's
+  // Settings preference (Local 4K Remux / Remote 40 Mbps / Remote 10 Mbps).
+  // forceH264 retries are not subject to the cap — the retry uses
+  // getPlaybackUrl's own 1080p ceiling for safety.
   useEffect(() => {
     if (!itemId) return;
     let cancelled = false;
     setUrl(null);
+    const maxBitrate = maxBitrateFor(loadSettings().quality);
+    const opts = forceH264 ? { forceH264: true } : { maxBitrate };
     client
-      .getPlaybackUrl(itemId, forceH264 ? { forceH264: true } : undefined)
+      .getPlaybackUrl(itemId, opts)
       .then((resolved) => {
         if (!cancelled) setUrl(resolved);
       })
