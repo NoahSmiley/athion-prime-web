@@ -13,34 +13,26 @@
  * height; below that, the backdrop is fully gone.
  */
 /**
- * `position: fixed` so the backdrop bleeds full-viewport width,
- * escaping the 700px column wrapper its parent lives in. Pinned just
- * below the TopNav (top-[80px] = 56px nav-offset + 24px row), 60vh
- * tall, fades out radially + on the bottom.
+ * Inline hero image for spare-mode detail pages. Renders as an actual
+ * <img>-shaped band at the top of the article — not a fixed background
+ * watermark. The article text sits *below* it on the normal page bg,
+ * not over it. A short bottom gradient softens the seam between the
+ * image and the body, but the article never has to fight the image
+ * for legibility.
  */
 export function SpareBackdrop({ src }: { src: string }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-[160px] h-[55vh] overflow-hidden z-0">
-      {/* Image layer — full bleed, slight blur, radial mask so corners
-          dissolve instead of cutting hard. */}
+    <div className="relative w-full overflow-hidden" style={{ aspectRatio: "21 / 9" }}>
       <div
         aria-hidden
         className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: `url(${src})`,
-          opacity: 0.4,
-          filter: "blur(1px) saturate(0.85)",
-          maskImage:
-            "radial-gradient(ellipse 70% 60% at 50% 30%, black 0%, black 35%, transparent 80%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse 70% 60% at 50% 30%, black 0%, black 35%, transparent 80%)",
-        }}
+        style={{ backgroundImage: `url(${src})` }}
       />
-      {/* Vertical wash anchoring the article body. Heavier toward the
-          bottom so text never has to fight the backdrop for legibility. */}
+      {/* Bottom-only fade so the image meets the page bg cleanly without
+          a hard horizontal line. */}
       <div
         aria-hidden
-        className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/65 to-background"
+        className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-b from-transparent to-background"
       />
     </div>
   );

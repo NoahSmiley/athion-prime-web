@@ -234,15 +234,12 @@ function SpareItemDetail({
   const isResume = resumePct != null && resumePct > 0 && resumePct < 100;
 
   return (
-    <div className="relative h-full overflow-auto">
-      {/* Faint backdrop wash — 8% opacity, blurred, masked to fade out by
-          ~30% down the column. Adds atmosphere without dominating like a
-          50vh hero would. Sits under the article. */}
-      {backdrop ? (
-        <SpareBackdrop src={backdrop} />
-      ) : null}
+    <div className="h-full overflow-auto" data-spare-fullbleed>
+      {/* Hero band — actual image at the top of the page, not a
+          background watermark. The article body sits below it. */}
+      {backdrop ? <SpareBackdrop src={backdrop} /> : null}
 
-      <article className="relative z-10 mx-auto flex max-w-[700px] flex-col gap-5 pt-32 pb-12 text-[13px]">
+      <article className="mx-auto flex max-w-[700px] flex-col gap-5 px-6 pt-8 pb-12 text-[13px]">
         <header className="flex flex-col gap-2">
           <h1 className="text-[18px] font-medium text-foreground">{item.Name}</h1>
           {meta.length > 0 ? (

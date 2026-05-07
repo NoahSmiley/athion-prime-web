@@ -251,6 +251,14 @@ html[data-theme="spare"] [data-prime-content] > * {
   padding-left: 24px !important;
   padding-right: 24px !important;
 }
+/* Detail views (movie/series) opt out of the column constraint at the
+   view root so the hero image can span the full viewport. The inner
+   <article> still uses max-w-[700px] for the text content. */
+html[data-theme="spare"] [data-prime-content] > [data-spare-fullbleed] {
+  max-width: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
 /* Spare mode: every view starts with its <header> as the first child of
    the column root. Give that header a generous top margin so the title
    has room to breathe under the fixed top nav (which is at top: 56 +

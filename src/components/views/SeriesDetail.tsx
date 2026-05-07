@@ -294,12 +294,10 @@ function SpareSeriesDetail({
   if (series.Genres && series.Genres.length > 0) meta.push(series.Genres.slice(0, 4).join(" · "));
 
   return (
-    <div className="relative h-full overflow-auto">
-      {backdrop ? (
-        <SpareBackdrop src={backdrop} />
-      ) : null}
+    <div className="h-full overflow-auto" data-spare-fullbleed>
+      {backdrop ? <SpareBackdrop src={backdrop} /> : null}
 
-      <article className="relative z-10 mx-auto flex max-w-[700px] flex-col gap-5 pt-32 pb-12 text-[13px]">
+      <article className="mx-auto flex max-w-[700px] flex-col gap-5 px-6 pt-8 pb-12 text-[13px]">
         <header className="flex flex-col gap-2">
           <h1 className="text-[18px] font-medium text-foreground">{series.Name}</h1>
           {meta.length > 0 ? (
