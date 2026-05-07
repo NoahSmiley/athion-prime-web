@@ -235,9 +235,26 @@ html[data-theme="spare"] .group:hover img {
   transform: none !important;
 }
 
-/* Constrain non-grid views to athion.me's 700px column in spare. Library /
-   home rows are full-width in both variants. */
+/* Spare mode: constrain content to athion.me's 700px column with 24px
+   horizontal gutters so headers, lists, and detail pages line up with
+   the nav. Views opt in via [data-spare-column].
+   The !important on padding wins over Tailwind's px-* utilities that
+   are sprinkled inside the views; inside the constrained element, the
+   inner content goes back to flush since it's already in-column. */
 html[data-theme="spare"] [data-spare-column] {
   max-width: 700px;
-  margin: 0 auto;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
 }
+/* Reset only the horizontal padding of direct children — vertical padding
+   like py-5 on headers, p-6 on body still applies. */
+html[data-theme="spare"] [data-spare-column] > * {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+/* The header in views also has its own border-bottom that we want to extend
+   only across the column, not the screen. Constraining the parent already
+   handles that. */

@@ -61,7 +61,7 @@ export function SearchView({ onNavigate }: { onNavigate: (view: View) => void })
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col" data-spare-column>
       <header className="border-b border-border px-8 py-5">
         <h1 className="text-xl font-medium text-foreground">Search</h1>
         <input
@@ -75,7 +75,7 @@ export function SearchView({ onNavigate }: { onNavigate: (view: View) => void })
           spellCheck={false}
         />
       </header>
-      <div className="flex-1 overflow-auto p-6" data-spare-column>
+      <div className="flex-1 overflow-auto p-6">
         {error ? (
           <p className="text-sm text-muted-foreground">Couldn't search: {error}</p>
         ) : !query.trim() ? (
