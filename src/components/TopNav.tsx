@@ -115,7 +115,7 @@ export function TopNav({
                 with the rest of the nav. */}
             <span
               style={{
-                background: "#0891b2",
+                background: "#06b6d4",
                 color: "#fff",
                 padding: "2px 6px",
                 fontSize: 10,
