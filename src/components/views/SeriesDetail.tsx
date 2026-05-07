@@ -67,11 +67,6 @@ export function SeriesDetail({
     ? client.imageUrl(series.Id, { type: "Backdrop" as never, maxWidth: 1920, tag })
     : null;
 
-  const posterTag = series.ImageTags?.Primary;
-  const poster = series.Id && posterTag
-    ? client.imageUrl(series.Id, { type: "Primary" as never, maxWidth: 600, tag: posterTag })
-    : null;
-
   // Pick the next-up episode: lowest-indexed unwatched, or first
   const nextUp = pickNextEpisode(episodes ?? []);
 
@@ -80,7 +75,6 @@ export function SeriesDetail({
       <SpareSeriesDetail
         series={series}
         backdrop={backdrop}
-        poster={poster}
         seasons={seasons}
         activeSeasonId={activeSeasonId}
         onChangeSeason={setActiveSeasonId}
@@ -269,7 +263,6 @@ function pickNextEpisode(episodes: BaseItemDto[]): BaseItemDto | null {
 function SpareSeriesDetail({
   series,
   backdrop,
-  poster,
   seasons,
   activeSeasonId,
   onChangeSeason,
@@ -279,7 +272,6 @@ function SpareSeriesDetail({
 }: {
   series: BaseItemDto;
   backdrop: string | null;
-  poster: string | null;
   seasons: BaseItemDto[] | null;
   activeSeasonId: string | null;
   onChangeSeason: (id: string) => void;
@@ -293,46 +285,40 @@ function SpareSeriesDetail({
   if (series.CommunityRating) meta.push(`★ ${series.CommunityRating.toFixed(1)}`);
   if (series.Genres && series.Genres.length > 0) meta.push(series.Genres.slice(0, 4).join(" · "));
 
+  const nextUpLabel = nextUp
+    ? `${nextUp.UserData?.PlaybackPositionTicks ? "Resume" : "Play"} · S${nextUp.ParentIndexNumber}E${nextUp.IndexNumber}`
+    : null;
+
   return (
     <div className="h-full overflow-auto">
-      <article className="mx-auto flex max-w-[700px] flex-col gap-5 pt-8 pb-12 text-[13px]">
+      <article className="mx-auto flex max-w-[700px] flex-col gap-6 pt-2 pb-12 text-[13px]">
         {backdrop ? <SpareBackdrop src={backdrop} /> : null}
+
+        {/* Title row mirrors ItemDetail: large title left, primary
+            action (next-up episode) right, meta beneath. */}
         <header className="flex flex-col gap-2">
-          <h1 className="text-[18px] font-medium text-foreground">{series.Name}</h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="flex-1 text-[26px] font-semibold leading-tight text-foreground">
+              {series.Name}
+            </h1>
+            {nextUp && nextUpLabel ? (
+              <button
+                type="button"
+                onClick={() => onPlay(nextUp)}
+                className="shrink-0 border border-foreground/60 px-5 py-2 text-[13px] font-medium text-foreground transition hover:bg-accent"
+                title={nextUp.Name ?? undefined}
+              >
+                {nextUpLabel}
+              </button>
+            ) : null}
+          </div>
           {meta.length > 0 ? (
-            <div className="text-[11px] text-muted-foreground">{meta.join(" · ")}</div>
+            <div className="text-[12px] text-muted-foreground">{meta.join(" · ")}</div>
           ) : null}
         </header>
 
-        {nextUp ? (
-          <div>
-            <button
-              type="button"
-              onClick={() => onPlay(nextUp)}
-              className="border border-foreground/60 px-4 py-1.5 text-foreground transition hover:bg-accent"
-            >
-              {nextUp.UserData?.PlaybackPositionTicks
-                ? `Resume · S${nextUp.ParentIndexNumber}E${nextUp.IndexNumber} ${nextUp.Name ?? ""}`
-                : `Play · S${nextUp.ParentIndexNumber}E${nextUp.IndexNumber} ${nextUp.Name ?? ""}`}
-            </button>
-          </div>
-        ) : null}
-
-        {series.Overview || poster ? (
-          <div className="overflow-hidden">
-            {poster ? (
-              <figure className="float-left mb-2 mr-5">
-                <img
-                  src={poster}
-                  alt={series.Name ?? ""}
-                  className="w-32 border border-border sm:w-36"
-                />
-              </figure>
-            ) : null}
-            {series.Overview ? (
-              <p className="text-foreground/80 leading-relaxed">{series.Overview}</p>
-            ) : null}
-          </div>
+        {series.Overview ? (
+          <p className="text-[14px] leading-relaxed text-foreground/85">{series.Overview}</p>
         ) : null}
 
         {seasons && seasons.length > 0 ? (

@@ -53,7 +53,6 @@ export function ItemDetail({
       <SpareItemDetail
         item={item}
         backdrop={backdrop}
-        poster={poster}
         runtimeMin={runtimeMin}
         directors={directors.filter((d): d is string => !!d)}
         writers={writers.filter((w): w is string => !!w)}
@@ -207,7 +206,6 @@ function formatRuntime(minutes: number): string {
 function SpareItemDetail({
   item,
   backdrop,
-  poster,
   runtimeMin,
   directors,
   writers,
@@ -217,7 +215,6 @@ function SpareItemDetail({
 }: {
   item: BaseItemDto;
   backdrop: string | null;
-  poster: string | null;
   runtimeMin: number | null;
   directors: string[];
   writers: string[];
@@ -235,72 +232,62 @@ function SpareItemDetail({
 
   return (
     <div className="h-full overflow-auto">
-      <article className="mx-auto flex max-w-[700px] flex-col gap-5 pt-8 pb-12 text-[13px]">
-        {/* Hero band — actual image at the top of the article, sized
-            to the same column as the rest of the body. */}
+      <article className="mx-auto flex max-w-[700px] flex-col gap-6 pt-2 pb-12 text-[13px]">
+        {/* Hero band first — sized inside the column. Pulled tight to
+            the nav so the eye lands on something immediately instead
+            of a slab of black. */}
         {backdrop ? <SpareBackdrop src={backdrop} /> : null}
+
+        {/* Title row owns the page weight: large title on the left,
+            Play button on the right, meta beneath. The button is the
+            primary action — placing it here removes the standalone
+            stripe that used to sit between hero and overview. */}
         <header className="flex flex-col gap-2">
-          <h1 className="text-[18px] font-medium text-foreground">{item.Name}</h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="flex-1 text-[26px] font-semibold leading-tight text-foreground">
+              {item.Name}
+            </h1>
+            <button
+              type="button"
+              onClick={() => onPlay(item)}
+              className="shrink-0 border border-foreground/60 px-5 py-2 text-[13px] font-medium text-foreground transition hover:bg-accent"
+            >
+              {isResume ? `Resume · ${Math.round(resumePct ?? 0)}%` : "Play"}
+            </button>
+          </div>
           {meta.length > 0 ? (
-            <div className="text-[11px] text-muted-foreground">{meta.join(" · ")}</div>
+            <div className="text-[12px] text-muted-foreground">{meta.join(" · ")}</div>
           ) : null}
         </header>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => onPlay(item)}
-            className="border border-foreground/60 px-4 py-1.5 text-foreground transition hover:bg-accent"
-          >
-            {isResume ? `Resume · ${Math.round(resumePct ?? 0)}%` : "Play"}
-          </button>
-        </div>
-
-        {/* Newspaper-style: poster floated left so the overview wraps
-            around it. Falls back to a non-floated stack on narrow screens
-            where the wrap would be cramped. */}
-        {item.Overview || poster ? (
-          <div className="overflow-hidden">
-            {poster ? (
-              <figure className="float-left mb-2 mr-5">
-                <img
-                  src={poster}
-                  alt={item.Name ?? ""}
-                  className="w-32 border border-border sm:w-36"
-                />
-              </figure>
-            ) : null}
-            {item.Overview ? (
-              <p className="text-foreground/80 leading-relaxed">{item.Overview}</p>
-            ) : null}
-          </div>
+        {item.Overview ? (
+          <p className="text-[14px] leading-relaxed text-foreground/85">{item.Overview}</p>
         ) : null}
 
+        {/* Inline credits paragraph — Director/Writer/Cast as one
+            running text block rather than a labeled fact-sheet table.
+            Reads like a film page, not a database record. */}
         {(directors.length > 0 || writers.length > 0 || cast.length > 0) ? (
-          <table className="w-full text-[12px]">
-            <tbody>
-              {directors.length > 0 ? (
-                <tr className="border-b border-border/40">
-                  <td className="w-32 py-2 pr-4 text-muted-foreground">Director</td>
-                  <td className="py-2 text-foreground/80">{directors.join(", ")}</td>
-                </tr>
-              ) : null}
-              {writers.length > 0 ? (
-                <tr className="border-b border-border/40">
-                  <td className="w-32 py-2 pr-4 text-muted-foreground">Writer</td>
-                  <td className="py-2 text-foreground/80">{writers.join(", ")}</td>
-                </tr>
-              ) : null}
-              {cast.length > 0 ? (
-                <tr className="border-b border-border/40">
-                  <td className="w-32 py-2 pr-4 text-muted-foreground">Cast</td>
-                  <td className="py-2 text-foreground/80">
-                    {cast.map((p) => p.Name).filter(Boolean).join(", ")}
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
+          <div className="border-t border-border/40 pt-4 text-[12px] leading-relaxed text-muted-foreground">
+            {directors.length > 0 ? (
+              <p>
+                <span className="text-foreground/80">Directed by</span>{" "}
+                {directors.join(", ")}.
+              </p>
+            ) : null}
+            {writers.length > 0 ? (
+              <p>
+                <span className="text-foreground/80">Written by</span>{" "}
+                {writers.join(", ")}.
+              </p>
+            ) : null}
+            {cast.length > 0 ? (
+              <p>
+                <span className="text-foreground/80">Starring</span>{" "}
+                {cast.map((p) => p.Name).filter(Boolean).join(", ")}.
+              </p>
+            ) : null}
+          </div>
         ) : null}
       </article>
     </div>
