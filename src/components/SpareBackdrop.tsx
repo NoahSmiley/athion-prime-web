@@ -20,7 +20,7 @@
  */
 export function SpareBackdrop({ src }: { src: string }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-[80px] h-[60vh] overflow-hidden z-0">
+    <div className="pointer-events-none fixed inset-x-0 top-[160px] h-[55vh] overflow-hidden z-0">
       {/* Image layer — full bleed, slight blur, radial mask so corners
           dissolve instead of cutting hard. */}
       <div
