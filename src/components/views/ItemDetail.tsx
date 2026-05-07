@@ -234,12 +234,11 @@ function SpareItemDetail({
   const isResume = resumePct != null && resumePct > 0 && resumePct < 100;
 
   return (
-    <div className="h-full overflow-auto" data-spare-fullbleed>
-      {/* Hero band — actual image at the top of the page, not a
-          background watermark. The article body sits below it. */}
-      {backdrop ? <SpareBackdrop src={backdrop} /> : null}
-
-      <article className="mx-auto flex max-w-[700px] flex-col gap-5 px-6 pt-8 pb-12 text-[13px]">
+    <div className="h-full overflow-auto">
+      <article className="mx-auto flex max-w-[700px] flex-col gap-5 pt-8 pb-12 text-[13px]">
+        {/* Hero band — actual image at the top of the article, sized
+            to the same column as the rest of the body. */}
+        {backdrop ? <SpareBackdrop src={backdrop} /> : null}
         <header className="flex flex-col gap-2">
           <h1 className="text-[18px] font-medium text-foreground">{item.Name}</h1>
           {meta.length > 0 ? (
