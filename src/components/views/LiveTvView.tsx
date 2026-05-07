@@ -123,7 +123,7 @@ export function LiveTvView() {
   if (theme === "spare") {
     return (
       <div className="flex h-full flex-col">
-        <header className="flex flex-col gap-3 pt-20 pb-5">
+        <header className="flex flex-col gap-3 pb-5">
           <h1 className="text-[18px] font-medium text-foreground">Live TV</h1>
           <input
             type="search"
