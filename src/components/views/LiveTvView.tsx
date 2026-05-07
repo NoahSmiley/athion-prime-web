@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { xtream, type XtreamCategory, type XtreamEPGEntry, type XtreamStream } from "@/lib/xtream/client";
+import { useTheme } from "@/lib/use-theme";
 
 /** Section ordering + keyword mapping mirrors tvOS Athion Prime. */
 const SECTION_ORDER: { name: string; keywords: string[] }[] = [
@@ -21,6 +22,7 @@ type Section = { name: string; categoryIds: string[] };
  * heuristic as tvOS, so the SPA matches the Apple TV experience.
  */
 export function LiveTvView() {
+  const [theme] = useTheme();
   const [sections, setSections] = useState<Section[] | null>(null);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [streamsBySection, setStreamsBySection] = useState<Record<string, XtreamStream[]>>({});
@@ -156,18 +158,24 @@ export function LiveTvView() {
           </ul>
         </nav>
 
-        {/* Channel grid */}
+        {/* Channel grid (Hybrid) or directory table (Spare) */}
         <div className="flex-1 overflow-auto p-6">
           {loadingStreams ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="aspect-video animate-pulse rounded-md bg-muted/50" />
-              ))}
-            </div>
+            theme === "spare" ? (
+              <p className="text-sm text-muted-foreground">Loading channels…</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className="aspect-video animate-pulse rounded-md bg-muted/50" />
+                ))}
+              </div>
+            )
           ) : visibleStreams.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {search.trim() ? `No channels match "${search.trim()}".` : "No channels in this section."}
             </p>
+          ) : theme === "spare" ? (
+            <ChannelTable streams={visibleStreams} onSelect={setPlaying} />
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {visibleStreams.map((s) => (
@@ -322,7 +330,7 @@ function ChannelCard({ stream, onSelect }: { stream: XtreamStream; onSelect: (s:
       onClick={() => onSelect(stream)}
       className="group flex flex-col gap-2 text-left focus:outline-none"
     >
-      <div className="relative aspect-video overflow-hidden rounded-md bg-muted ring-1 ring-border transition duration-200 group-hover:ring-2 group-hover:ring-foreground/60">
+      <div className="relative aspect-video overflow-hidden border border-border bg-muted transition duration-150 group-hover:border-foreground/60">
         {stream.stream_icon ? (
           <img
             src={stream.stream_icon}
@@ -341,10 +349,10 @@ function ChannelCard({ stream, onSelect }: { stream: XtreamStream; onSelect: (s:
         )}
       </div>
       <div className="px-0.5">
-        <div className="line-clamp-1 text-sm font-medium text-foreground transition group-hover:underline group-hover:underline-offset-2">
+        <div className="line-clamp-1 text-[13px] font-medium text-foreground transition group-hover:underline group-hover:underline-offset-2">
           {stream.name}
         </div>
-        <div className="line-clamp-1 text-xs text-muted-foreground">
+        <div className="line-clamp-1 text-[11px] text-muted-foreground">
           {epg ? epg.title : "—"}
         </div>
       </div>
@@ -357,6 +365,84 @@ function parseUtcXtream(s: string): number | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/.exec(s);
   if (!m) return null;
   return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+}
+
+/**
+ * Spare-mode channel directory: name · current EPG title. EPG fetches lazily
+ * for visible rows the same way ChannelCard does, sharing the module-level
+ * cache + queue so switching themes doesn't refetch.
+ */
+function ChannelTable({
+  streams,
+  onSelect,
+}: {
+  streams: XtreamStream[];
+  onSelect: (s: XtreamStream) => void;
+}) {
+  return (
+    <table className="w-full text-[13px]">
+      <tbody>
+        {streams.map((s) => (
+          <ChannelRow key={s.stream_id} stream={s} onSelect={onSelect} />
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function ChannelRow({ stream, onSelect }: { stream: XtreamStream; onSelect: (s: XtreamStream) => void }) {
+  const [epg, setEpg] = useState<XtreamEPGEntry | null>(epgCache.get(stream.stream_id) ?? null);
+  const rowRef = useRef<HTMLTableRowElement | null>(null);
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    if (epgCache.has(stream.stream_id)) return;
+    const node = rowRef.current;
+    if (!node) return;
+
+    const start = () => {
+      if (startedRef.current) return;
+      startedRef.current = true;
+      let cancelled = false;
+      fetchCurrentEPG(stream.stream_id).then((current) => {
+        if (!cancelled) setEpg(current);
+      });
+      return () => {
+        cancelled = true;
+      };
+    };
+
+    if (typeof IntersectionObserver === "undefined") {
+      start();
+      return;
+    }
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            start();
+            io.disconnect();
+            break;
+          }
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    io.observe(node);
+    return () => io.disconnect();
+  }, [stream.stream_id]);
+
+  return (
+    <tr
+      ref={rowRef}
+      onClick={() => onSelect(stream)}
+      className="cursor-pointer border-b border-border/40 transition hover:bg-accent/40"
+    >
+      <td className="whitespace-nowrap py-2 pr-4 font-medium text-foreground">{stream.name}</td>
+      <td className="w-full py-2 pr-4 text-muted-foreground">{epg?.title ?? "—"}</td>
+    </tr>
+  );
 }
 
 /**

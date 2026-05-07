@@ -27,13 +27,13 @@ export function PosterCard({
       onClick={() => onSelect(item)}
       className="group flex flex-col gap-2 text-left focus:outline-none"
     >
-      <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-muted ring-1 ring-border transition duration-200 group-hover:ring-2 group-hover:ring-foreground/60 group-hover:shadow-lg group-hover:shadow-black/40">
+      <div className="relative aspect-[2/3] overflow-hidden border border-border bg-muted transition duration-150 group-hover:border-foreground/60">
         {src ? (
           <img
             src={src}
             alt={item.Name ?? ""}
             loading="lazy"
-            className="h-full w-full scale-100 object-cover transition duration-300 group-hover:scale-[1.03]"
+            className="h-full w-full object-cover"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-xs text-muted-foreground/60">
@@ -42,10 +42,10 @@ export function PosterCard({
         )}
       </div>
       <div className="px-0.5">
-        <div className="line-clamp-1 text-sm font-medium text-foreground transition group-hover:underline group-hover:underline-offset-2">
+        <div className="line-clamp-1 text-[13px] font-medium text-foreground transition group-hover:underline group-hover:underline-offset-2">
           {item.Name}
         </div>
-        {sub ? <div className="text-xs text-muted-foreground">{sub}</div> : null}
+        {sub ? <div className="text-[11px] text-muted-foreground">{sub}</div> : null}
       </div>
     </button>
   );

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Play, Clock, Star } from "lucide-react";
 import { useJellyfin } from "@/components/AuthProvider";
+import { useTheme } from "@/lib/use-theme";
 import type { BaseItemDto } from "@/lib/jellyfin/types";
 
 const TICKS_PER_SECOND = 10_000_000;
@@ -14,6 +15,7 @@ export function SeriesDetail({
   onPlay: (episode: BaseItemDto) => void;
 }) {
   const client = useJellyfin();
+  const [theme] = useTheme();
   const [series, setSeries] = useState<BaseItemDto>(initial);
   const [seasons, setSeasons] = useState<BaseItemDto[] | null>(null);
   const [activeSeasonId, setActiveSeasonId] = useState<string | null>(null);
@@ -66,6 +68,20 @@ export function SeriesDetail({
 
   // Pick the next-up episode: lowest-indexed unwatched, or first
   const nextUp = pickNextEpisode(episodes ?? []);
+
+  if (theme === "spare") {
+    return (
+      <SpareSeriesDetail
+        series={series}
+        seasons={seasons}
+        activeSeasonId={activeSeasonId}
+        onChangeSeason={setActiveSeasonId}
+        episodes={episodes}
+        nextUp={nextUp}
+        onPlay={onPlay}
+      />
+    );
+  }
 
   return (
     <div className="relative h-full overflow-auto">
@@ -235,4 +251,119 @@ function pickNextEpisode(episodes: BaseItemDto[]): BaseItemDto | null {
   if (resumable) return resumable;
   const unwatched = episodes.find((e) => !e.UserData?.Played);
   return unwatched ?? episodes[0];
+}
+
+/**
+ * Spare-mode series view: no backdrop, narrow column, season pills replaced
+ * with a thin row, episodes rendered as a directory table.
+ */
+function SpareSeriesDetail({
+  series,
+  seasons,
+  activeSeasonId,
+  onChangeSeason,
+  episodes,
+  nextUp,
+  onPlay,
+}: {
+  series: BaseItemDto;
+  seasons: BaseItemDto[] | null;
+  activeSeasonId: string | null;
+  onChangeSeason: (id: string) => void;
+  episodes: BaseItemDto[] | null;
+  nextUp: BaseItemDto | null;
+  onPlay: (episode: BaseItemDto) => void;
+}) {
+  const meta: string[] = [];
+  if (series.ProductionYear) meta.push(String(series.ProductionYear));
+  if (series.OfficialRating) meta.push(series.OfficialRating);
+  if (series.CommunityRating) meta.push(`★ ${series.CommunityRating.toFixed(1)}`);
+  if (series.Genres && series.Genres.length > 0) meta.push(series.Genres.slice(0, 4).join(" · "));
+
+  return (
+    <div className="h-full overflow-auto">
+      <article className="mx-auto flex max-w-[700px] flex-col gap-6 px-6 py-10 text-[13px]">
+        <header className="flex flex-col gap-2">
+          <h1 className="text-[18px] font-medium text-foreground">{series.Name}</h1>
+          {meta.length > 0 ? (
+            <div className="text-[11px] text-muted-foreground">{meta.join(" · ")}</div>
+          ) : null}
+        </header>
+
+        {nextUp ? (
+          <div>
+            <button
+              type="button"
+              onClick={() => onPlay(nextUp)}
+              className="border border-foreground/60 px-4 py-1.5 text-foreground transition hover:bg-accent"
+            >
+              {nextUp.UserData?.PlaybackPositionTicks
+                ? `Resume · S${nextUp.ParentIndexNumber}E${nextUp.IndexNumber} ${nextUp.Name ?? ""}`
+                : `Play · S${nextUp.ParentIndexNumber}E${nextUp.IndexNumber} ${nextUp.Name ?? ""}`}
+            </button>
+          </div>
+        ) : null}
+
+        {series.Overview ? (
+          <p className="text-foreground/80 leading-relaxed">{series.Overview}</p>
+        ) : null}
+
+        {seasons && seasons.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-y border-border/40 py-3 text-[12px]">
+            {seasons.map((s) => {
+              const id = s.Id ?? "";
+              const isActive = id === activeSeasonId;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => onChangeSeason(id)}
+                  className={isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"}
+                >
+                  {s.Name ?? `Season ${s.IndexNumber ?? "?"}`}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {episodes === null ? (
+          <p className="text-muted-foreground">Loading episodes…</p>
+        ) : episodes.length === 0 ? (
+          <p className="text-muted-foreground">No episodes.</p>
+        ) : (
+          <table className="w-full text-[13px]">
+            <tbody>
+              {episodes.map((e) => {
+                const pct = e.UserData?.PlayedPercentage ?? 0;
+                const partial = pct > 0 && pct < 100;
+                const watched = e.UserData?.Played;
+                return (
+                  <tr
+                    key={e.Id ?? e.Name}
+                    onClick={() => onPlay(e)}
+                    className="cursor-pointer border-b border-border/40 transition hover:bg-accent/40"
+                  >
+                    <td className="whitespace-nowrap py-2 pr-3 text-[11px] text-muted-foreground">
+                      {e.IndexNumber != null ? String(e.IndexNumber).padStart(2, "0") : "—"}
+                    </td>
+                    <td className="w-full py-2 pr-3 text-foreground">
+                      {e.Name ?? "—"}
+                      {partial ? (
+                        <span className="ml-2 text-[11px] text-muted-foreground">
+                          {Math.round(pct)}%
+                        </span>
+                      ) : watched ? (
+                        <span className="ml-2 text-[11px] text-muted-foreground">watched</span>
+                      ) : null}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </article>
+    </div>
+  );
 }

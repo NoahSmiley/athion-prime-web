@@ -3,8 +3,10 @@ import "./App.css";
 import { useNavigation } from "@/lib/nav";
 import { useJellyfin } from "@/components/AuthProvider";
 import { Sidebar } from "@/components/Sidebar";
+import { TopNav } from "@/components/TopNav";
 import { MainContent } from "@/components/MainContent";
 import { BreadcrumbHeader } from "@/components/BreadcrumbHeader";
+import { useTheme } from "@/lib/use-theme";
 import type { PlaybackContext } from "@/components/player/PrimePlayer";
 import type { View } from "@/types";
 import type { BaseItemDto } from "@/lib/jellyfin/types";
@@ -17,6 +19,7 @@ const PrimePlayer = lazy(() =>
 function App() {
   const nav = useNavigation();
   const client = useJellyfin();
+  const [theme] = useTheme();
   const [playback, setPlayback] = useState<PlaybackContext | null>(null);
 
   const onSidebarChange = (next: View) => nav.reset(next);
@@ -70,9 +73,16 @@ function App() {
     [client]
   );
 
+  // Spare uses athion.me-style top nav; Hybrid keeps the side rail.
+  const isSpare = theme === "spare";
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
-      <Sidebar view={nav.current} onChange={onSidebarChange} />
+    <div className={isSpare ? "flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground" : "flex h-screen w-screen overflow-hidden bg-background text-foreground"}>
+      {isSpare ? (
+        <TopNav view={nav.current} onChange={onSidebarChange} />
+      ) : (
+        <Sidebar view={nav.current} onChange={onSidebarChange} />
+      )}
       <main className="flex flex-1 flex-col overflow-hidden">
         <BreadcrumbHeader nav={nav} />
         <div className="flex-1 overflow-hidden">

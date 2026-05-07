@@ -175,6 +175,14 @@
   }
 }
 
+/* nav-link / nav-link-active — same naming + colors as athion.me's
+   navbar so the spare top nav matches the live site exactly. The
+   !important is kept (matches athion.me) so adjacent inline-style
+   overrides don't accidentally win. */
+.nav-link { color: #828282 !important; transition: color 0.15s; }
+.nav-link:hover { color: #fff !important; }
+.nav-link-active { color: #fff !important; }
+
 /* ---------------------------------------------------------------------------
  * Theme variants. Both share the dark athion palette; the difference is
  * chrome and density. Selectors only target [data-theme="spare"] — Hybrid

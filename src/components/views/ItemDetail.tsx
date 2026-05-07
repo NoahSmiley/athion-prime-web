@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Play, Clock, Star } from "lucide-react";
 import { useJellyfin } from "@/components/AuthProvider";
+import { useTheme } from "@/lib/use-theme";
 import type { BaseItemDto } from "@/lib/jellyfin/types";
 
 const TICKS_PER_SECOND = 10_000_000;
@@ -14,6 +15,7 @@ export function ItemDetail({
   onPlay: (item: BaseItemDto) => void;
 }) {
   const client = useJellyfin();
+  const [theme] = useTheme();
   // Re-fetch with full fields (cast/chapters etc.) — getItems() only returns a thin slice.
   const [item, setItem] = useState<BaseItemDto>(initial);
   useEffect(() => {
@@ -44,6 +46,21 @@ export function ItemDetail({
   const directors = item.People?.filter((p) => p.Type === "Director").map((p) => p.Name).filter(Boolean) ?? [];
   const writers = item.People?.filter((p) => p.Type === "Writer").map((p) => p.Name).filter(Boolean) ?? [];
   const resumePct = item.UserData?.PlayedPercentage;
+
+  if (theme === "spare") {
+    return (
+      <SpareItemDetail
+        item={item}
+        poster={poster}
+        runtimeMin={runtimeMin}
+        directors={directors.filter((d): d is string => !!d)}
+        writers={writers.filter((w): w is string => !!w)}
+        cast={cast}
+        resumePct={resumePct ?? undefined}
+        onPlay={onPlay}
+      />
+    );
+  }
 
   return (
     <div className="relative h-full overflow-auto">
@@ -177,4 +194,99 @@ function formatRuntime(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
+/**
+ * Spare-mode detail layout — narrow column, no backdrop hero, plain
+ * `[ Play ]` text button. Matches the article-style pages on athion.me.
+ */
+function SpareItemDetail({
+  item,
+  poster,
+  runtimeMin,
+  directors,
+  writers,
+  cast,
+  resumePct,
+  onPlay,
+}: {
+  item: BaseItemDto;
+  poster: string | null;
+  runtimeMin: number | null;
+  directors: string[];
+  writers: string[];
+  cast: { Id?: string | null; Name?: string | null; Role?: string | null }[];
+  resumePct: number | undefined;
+  onPlay: (item: BaseItemDto) => void;
+}) {
+  const meta: string[] = [];
+  if (item.ProductionYear) meta.push(String(item.ProductionYear));
+  if (runtimeMin) meta.push(formatRuntime(runtimeMin));
+  if (item.OfficialRating) meta.push(item.OfficialRating);
+  if (item.CommunityRating) meta.push(`★ ${item.CommunityRating.toFixed(1)}`);
+  if (item.Genres && item.Genres.length > 0) meta.push(item.Genres.slice(0, 4).join(" · "));
+  const isResume = resumePct != null && resumePct > 0 && resumePct < 100;
+
+  return (
+    <div className="h-full overflow-auto">
+      <article className="mx-auto flex max-w-[700px] flex-col gap-6 px-6 py-10 text-[13px]">
+        <header className="flex flex-col gap-2">
+          <h1 className="text-[18px] font-medium text-foreground">{item.Name}</h1>
+          {meta.length > 0 ? (
+            <div className="text-[11px] text-muted-foreground">{meta.join(" · ")}</div>
+          ) : null}
+        </header>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => onPlay(item)}
+            className="border border-foreground/60 px-4 py-1.5 text-foreground transition hover:bg-accent"
+          >
+            {isResume ? `Resume · ${Math.round(resumePct ?? 0)}%` : "Play"}
+          </button>
+        </div>
+
+        {poster ? (
+          // Smaller poster, inline; not a hero. Sits like an article figure.
+          <img
+            src={poster}
+            alt={item.Name ?? ""}
+            className="w-40 border border-border"
+          />
+        ) : null}
+
+        {item.Overview ? (
+          <p className="text-foreground/80 leading-relaxed">{item.Overview}</p>
+        ) : null}
+
+        {(directors.length > 0 || writers.length > 0) ? (
+          <table className="w-full text-[12px]">
+            <tbody>
+              {directors.length > 0 ? (
+                <tr className="border-b border-border/40">
+                  <td className="w-32 py-2 pr-4 text-muted-foreground">Director</td>
+                  <td className="py-2 text-foreground/80">{directors.join(", ")}</td>
+                </tr>
+              ) : null}
+              {writers.length > 0 ? (
+                <tr className="border-b border-border/40">
+                  <td className="w-32 py-2 pr-4 text-muted-foreground">Writer</td>
+                  <td className="py-2 text-foreground/80">{writers.join(", ")}</td>
+                </tr>
+              ) : null}
+              {cast.length > 0 ? (
+                <tr className="border-b border-border/40">
+                  <td className="w-32 py-2 pr-4 text-muted-foreground">Cast</td>
+                  <td className="py-2 text-foreground/80">
+                    {cast.map((p) => p.Name).filter(Boolean).join(", ")}
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        ) : null}
+      </article>
+    </div>
+  );
 }
