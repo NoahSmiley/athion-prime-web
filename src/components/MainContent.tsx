@@ -282,7 +282,7 @@ function ItemGrid({
     return <Placeholder title={`Couldn't load ${title.toLowerCase()}`} body={error} />;
   }
   return (
-    <div className="flex h-full flex-col" data-spare-column>
+    <div className="flex h-full flex-col">
       <header className="flex items-end justify-between gap-4 border-b border-border px-8 py-5">
         <div>
           <h1 className="text-xl font-medium text-foreground">{title}</h1>
@@ -290,7 +290,9 @@ function ItemGrid({
             {items === null ? "Loading…" : `${items.length} item${items.length === 1 ? "" : "s"}`}
           </p>
         </div>
-        <SortControls scopeKey={scopeKey} onChange={setSort} />
+        <div data-sort-controls>
+          <SortControls scopeKey={scopeKey} onChange={setSort} />
+        </div>
       </header>
       <div className="flex-1 overflow-auto p-6">
         {items === null ? (

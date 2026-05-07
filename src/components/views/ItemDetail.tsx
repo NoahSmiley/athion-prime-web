@@ -51,6 +51,7 @@ export function ItemDetail({
     return (
       <SpareItemDetail
         item={item}
+        backdrop={backdrop}
         poster={poster}
         runtimeMin={runtimeMin}
         directors={directors.filter((d): d is string => !!d)}
@@ -197,11 +198,14 @@ function formatRuntime(minutes: number): string {
 }
 
 /**
- * Spare-mode detail layout — narrow column, no backdrop hero, plain
- * `[ Play ]` text button. Matches the article-style pages on athion.me.
+ * Spare-mode detail layout — narrow column with a faint top backdrop
+ * wash, a poster floated as a `<figure>` so the overview text wraps
+ * around it like a newspaper article. Matches athion.me's article-page
+ * vibe while still showing media context.
  */
 function SpareItemDetail({
   item,
+  backdrop,
   poster,
   runtimeMin,
   directors,
@@ -211,6 +215,7 @@ function SpareItemDetail({
   onPlay,
 }: {
   item: BaseItemDto;
+  backdrop: string | null;
   poster: string | null;
   runtimeMin: number | null;
   directors: string[];
@@ -228,8 +233,30 @@ function SpareItemDetail({
   const isResume = resumePct != null && resumePct > 0 && resumePct < 100;
 
   return (
-    <div className="h-full overflow-auto">
-      <article className="mx-auto flex max-w-[700px] flex-col gap-6 px-6 py-10 text-[13px]">
+    <div className="relative h-full overflow-auto">
+      {/* Faint backdrop wash — 8% opacity, blurred, masked to fade out by
+          ~30% down the column. Adds atmosphere without dominating like a
+          50vh hero would. Sits under the article. */}
+      {backdrop ? (
+        <>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-[40vh] bg-cover bg-center opacity-[0.08]"
+            style={{
+              backgroundImage: `url(${backdrop})`,
+              filter: "blur(2px)",
+              maskImage: "linear-gradient(to bottom, black 0%, transparent 90%)",
+              WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 90%)",
+            }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-[40vh] bg-gradient-to-b from-transparent via-background/40 to-background"
+          />
+        </>
+      ) : null}
+
+      <article className="relative mx-auto flex max-w-[700px] flex-col gap-5 py-10 text-[13px]">
         <header className="flex flex-col gap-2">
           <h1 className="text-[18px] font-medium text-foreground">{item.Name}</h1>
           {meta.length > 0 ? (
@@ -247,20 +274,27 @@ function SpareItemDetail({
           </button>
         </div>
 
-        {poster ? (
-          // Smaller poster, inline; not a hero. Sits like an article figure.
-          <img
-            src={poster}
-            alt={item.Name ?? ""}
-            className="w-40 border border-border"
-          />
+        {/* Newspaper-style: poster floated left so the overview wraps
+            around it. Falls back to a non-floated stack on narrow screens
+            where the wrap would be cramped. */}
+        {item.Overview || poster ? (
+          <div className="overflow-hidden">
+            {poster ? (
+              <figure className="float-left mb-2 mr-5">
+                <img
+                  src={poster}
+                  alt={item.Name ?? ""}
+                  className="w-32 border border-border sm:w-36"
+                />
+              </figure>
+            ) : null}
+            {item.Overview ? (
+              <p className="text-foreground/80 leading-relaxed">{item.Overview}</p>
+            ) : null}
+          </div>
         ) : null}
 
-        {item.Overview ? (
-          <p className="text-foreground/80 leading-relaxed">{item.Overview}</p>
-        ) : null}
-
-        {(directors.length > 0 || writers.length > 0) ? (
+        {(directors.length > 0 || writers.length > 0 || cast.length > 0) ? (
           <table className="w-full text-[12px]">
             <tbody>
               {directors.length > 0 ? (

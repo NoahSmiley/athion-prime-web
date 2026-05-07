@@ -118,7 +118,7 @@ export function LiveTvView() {
   }
 
   return (
-    <div className="flex h-full flex-col" data-spare-column>
+    <div className="flex h-full flex-col">
       <header className="flex items-end justify-between gap-4 border-b border-border px-8 py-5">
         <div>
           <h1 className="text-xl font-medium text-foreground">Live TV</h1>

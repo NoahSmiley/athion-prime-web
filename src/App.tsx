@@ -85,7 +85,7 @@ function App() {
       )}
       <main className="flex flex-1 flex-col overflow-hidden">
         <BreadcrumbHeader nav={nav} />
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden" data-prime-content>
           <MainContent
             view={nav.current}
             onNavigate={onContentNavigate}

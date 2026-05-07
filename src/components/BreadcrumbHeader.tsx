@@ -6,7 +6,7 @@ export function BreadcrumbHeader({ nav }: { nav: Navigation }) {
   const { crumbs, canBack, canForward, back, forward, jumpTo } = nav;
 
   return (
-    <div className="flex h-11 items-center gap-2 border-b border-border bg-background/80 px-4 backdrop-blur">
+    <div className="flex h-11 items-center gap-2 border-b border-border bg-background/80 px-4 backdrop-blur" data-prime-breadcrumbs>
       <button
         type="button"
         onClick={back}

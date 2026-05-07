@@ -21,7 +21,7 @@ export function HomeView({ onNavigate }: { onNavigate: (view: View) => void }) {
   };
 
   return (
-    <div className="flex h-full flex-col" data-spare-column>
+    <div className="flex h-full flex-col">
       <header className="border-b border-border px-8 py-5">
         <h1 className="text-xl font-medium text-foreground">Home</h1>
       </header>

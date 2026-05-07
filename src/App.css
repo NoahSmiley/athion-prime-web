@@ -235,26 +235,55 @@ html[data-theme="spare"] .group:hover img {
   transform: none !important;
 }
 
-/* Spare mode: constrain content to athion.me's 700px column with 24px
-   horizontal gutters so headers, lists, and detail pages line up with
-   the nav. Views opt in via [data-spare-column].
-   The !important on padding wins over Tailwind's px-* utilities that
-   are sprinkled inside the views; inside the constrained element, the
-   inner content goes back to flush since it's already in-column. */
-html[data-theme="spare"] [data-spare-column] {
+/* Spare mode: constrain *every* view to athion.me's 700px column with
+   24px gutters. The selector targets MainContent's first child (which
+   is the view root coming back from the dispatch's lazy Suspense),
+   regardless of which view it is — so we never have to remember to
+   tag a new view with data-spare-column.
+   The !important wins over Tailwind's px-* utilities that are sprinkled
+   inside views. Inner direct children get their horizontal padding
+   zeroed so we don't get a 48px double-gutter. */
+html[data-theme="spare"] [data-prime-content] > * {
   max-width: 700px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-left: auto !important;
+  margin-right: auto !important;
   box-sizing: border-box;
   padding-left: 24px !important;
   padding-right: 24px !important;
 }
-/* Reset only the horizontal padding of direct children — vertical padding
-   like py-5 on headers, p-6 on body still applies. */
-html[data-theme="spare"] [data-spare-column] > * {
+/* Reset horizontal padding on every descendant of the column wrapper that
+   uses Tailwind's px-* / pl-* / pr-* / p-* / py-* utilities. The column
+   gutter is owned by the wrapper now, so any inner px-6 / p-6 / px-8
+   would stack into 48-56px. We zero just the horizontal axis; vertical
+   padding from p-* / py-* is preserved by leaving padding-top/bottom
+   alone and letting the shorthand it computed apply. */
+html[data-theme="spare"] [data-prime-content] [class*="px-"],
+html[data-theme="spare"] [data-prime-content] [class*="pl-"],
+html[data-theme="spare"] [data-prime-content] [class*="pr-"],
+html[data-theme="spare"] [data-prime-content] [class*="p-1"],
+html[data-theme="spare"] [data-prime-content] [class*="p-2"],
+html[data-theme="spare"] [data-prime-content] [class*="p-3"],
+html[data-theme="spare"] [data-prime-content] [class*="p-4"],
+html[data-theme="spare"] [data-prime-content] [class*="p-5"],
+html[data-theme="spare"] [data-prime-content] [class*="p-6"],
+html[data-theme="spare"] [data-prime-content] [class*="p-7"],
+html[data-theme="spare"] [data-prime-content] [class*="p-8"],
+html[data-theme="spare"] [data-prime-content] [class*="p-10"] {
   padding-left: 0 !important;
   padding-right: 0 !important;
 }
-/* The header in views also has its own border-bottom that we want to extend
-   only across the column, not the screen. Constraining the parent already
-   handles that. */
+/* BreadcrumbHeader is its own row above the view — also pull it into
+   the column. The component's outer div is what we target via the
+   shared [data-prime-breadcrumbs] hook. */
+/* Breadcrumbs aren't part of athion.me's chrome — hide entirely in spare.
+   Navigation in spare is single-level (TopNav) so the back/forward stack
+   isn't surfaced. Alt-arrow + browser back still work. */
+html[data-theme="spare"] [data-prime-breadcrumbs] {
+  display: none !important;
+}
+
+/* Sort presets dropdown is removed in spare — lists default to alpha
+   sort. Headers still show the title + count. */
+html[data-theme="spare"] [data-prime-content] [data-sort-controls] {
+  display: none !important;
+}

@@ -66,6 +66,11 @@ export function SeriesDetail({
     ? client.imageUrl(series.Id, { type: "Backdrop" as never, maxWidth: 1920, tag })
     : null;
 
+  const posterTag = series.ImageTags?.Primary;
+  const poster = series.Id && posterTag
+    ? client.imageUrl(series.Id, { type: "Primary" as never, maxWidth: 600, tag: posterTag })
+    : null;
+
   // Pick the next-up episode: lowest-indexed unwatched, or first
   const nextUp = pickNextEpisode(episodes ?? []);
 
@@ -73,6 +78,8 @@ export function SeriesDetail({
     return (
       <SpareSeriesDetail
         series={series}
+        backdrop={backdrop}
+        poster={poster}
         seasons={seasons}
         activeSeasonId={activeSeasonId}
         onChangeSeason={setActiveSeasonId}
@@ -254,11 +261,14 @@ function pickNextEpisode(episodes: BaseItemDto[]): BaseItemDto | null {
 }
 
 /**
- * Spare-mode series view: no backdrop, narrow column, season pills replaced
- * with a thin row, episodes rendered as a directory table.
+ * Spare-mode series view: faint backdrop wash up top, poster floated as
+ * a `<figure>` so the overview wraps around it, season switcher as a
+ * thin text row, episodes rendered as a directory table.
  */
 function SpareSeriesDetail({
   series,
+  backdrop,
+  poster,
   seasons,
   activeSeasonId,
   onChangeSeason,
@@ -267,6 +277,8 @@ function SpareSeriesDetail({
   onPlay,
 }: {
   series: BaseItemDto;
+  backdrop: string | null;
+  poster: string | null;
   seasons: BaseItemDto[] | null;
   activeSeasonId: string | null;
   onChangeSeason: (id: string) => void;
@@ -281,8 +293,27 @@ function SpareSeriesDetail({
   if (series.Genres && series.Genres.length > 0) meta.push(series.Genres.slice(0, 4).join(" · "));
 
   return (
-    <div className="h-full overflow-auto">
-      <article className="mx-auto flex max-w-[700px] flex-col gap-6 px-6 py-10 text-[13px]">
+    <div className="relative h-full overflow-auto">
+      {backdrop ? (
+        <>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-[40vh] bg-cover bg-center opacity-[0.08]"
+            style={{
+              backgroundImage: `url(${backdrop})`,
+              filter: "blur(2px)",
+              maskImage: "linear-gradient(to bottom, black 0%, transparent 90%)",
+              WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 90%)",
+            }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-[40vh] bg-gradient-to-b from-transparent via-background/40 to-background"
+          />
+        </>
+      ) : null}
+
+      <article className="relative mx-auto flex max-w-[700px] flex-col gap-5 py-10 text-[13px]">
         <header className="flex flex-col gap-2">
           <h1 className="text-[18px] font-medium text-foreground">{series.Name}</h1>
           {meta.length > 0 ? (
@@ -304,8 +335,21 @@ function SpareSeriesDetail({
           </div>
         ) : null}
 
-        {series.Overview ? (
-          <p className="text-foreground/80 leading-relaxed">{series.Overview}</p>
+        {series.Overview || poster ? (
+          <div className="overflow-hidden">
+            {poster ? (
+              <figure className="float-left mb-2 mr-5">
+                <img
+                  src={poster}
+                  alt={series.Name ?? ""}
+                  className="w-32 border border-border sm:w-36"
+                />
+              </figure>
+            ) : null}
+            {series.Overview ? (
+              <p className="text-foreground/80 leading-relaxed">{series.Overview}</p>
+            ) : null}
+          </div>
         ) : null}
 
         {seasons && seasons.length > 0 ? (
