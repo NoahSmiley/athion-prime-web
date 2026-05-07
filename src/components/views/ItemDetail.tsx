@@ -241,17 +241,16 @@ function SpareItemDetail({
         <>
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-[40vh] bg-cover bg-center opacity-[0.08]"
+            className="pointer-events-none absolute inset-x-0 top-0 h-[50vh] bg-cover bg-center opacity-25"
             style={{
               backgroundImage: `url(${backdrop})`,
-              filter: "blur(2px)",
-              maskImage: "linear-gradient(to bottom, black 0%, transparent 90%)",
-              WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 90%)",
+              maskImage: "linear-gradient(to bottom, black 0%, black 30%, transparent 95%)",
+              WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 30%, transparent 95%)",
             }}
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-[40vh] bg-gradient-to-b from-transparent via-background/40 to-background"
+            className="pointer-events-none absolute inset-x-0 top-0 h-[50vh] bg-gradient-to-b from-transparent via-background/50 to-background"
           />
         </>
       ) : null}
