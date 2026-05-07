@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { useJellyfin } from "@/components/AuthProvider";
 import { PosterCard } from "@/components/PosterCard";
+import { MediaTable } from "@/components/MediaTable";
+import { useTheme } from "@/lib/use-theme";
 import type { BaseItemDto, BaseItemKind } from "@/lib/jellyfin/types";
 import type { View } from "@/types";
 
@@ -19,7 +21,7 @@ export function HomeView({ onNavigate }: { onNavigate: (view: View) => void }) {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col" data-spare-column>
       <header className="border-b border-border px-8 py-5">
         <h1 className="text-xl font-medium text-foreground">Home</h1>
       </header>
@@ -77,6 +79,7 @@ function HomeRow({
   onSelect: (item: BaseItemDto) => void;
   seeAll: (() => void) | null;
 }) {
+  const [theme] = useTheme();
   const [items, setItems] = useState<BaseItemDto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [emblaRef, embla] = useEmblaCarousel({
@@ -121,7 +124,11 @@ function HomeRow({
       {error ? (
         <p className="text-xs text-muted-foreground">Couldn't load: {error}</p>
       ) : items === null ? (
-        <RowSkeleton />
+        theme === "spare" ? <p className="text-xs text-muted-foreground">Loading…</p> : <RowSkeleton />
+      ) : theme === "spare" ? (
+        // Spare: directory table, no posters. Caps to 8 rows so the home
+        // page stays terse — the See-all link drills into the full list.
+        <MediaTable items={items.slice(0, 8)} onSelect={onSelect} />
       ) : (
         <div className="relative">
           <div ref={emblaRef} className="overflow-hidden">

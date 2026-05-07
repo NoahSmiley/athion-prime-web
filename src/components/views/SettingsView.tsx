@@ -5,9 +5,11 @@ import {
   loadSettings,
   saveSettings,
   QUALITY_OPTIONS,
+  THEME_OPTIONS,
   type PrimeSettings,
   type QualityKey,
 } from "@/lib/settings";
+import { useTheme } from "@/lib/use-theme";
 
 const ATHION_BASE: string =
   (import.meta.env.VITE_ATHION_API_BASE as string | undefined) ?? "https://athion.me";
@@ -22,6 +24,7 @@ const ATHION_HOME: string = ATHION_BASE.replace(/\/+$/, "");
  */
 export function SettingsView() {
   const { session } = useAuth();
+  const [theme, setTheme] = useTheme();
   const [settings, setSettings] = useState<PrimeSettings>(DEFAULT_SETTINGS);
   const [savedFlash, setSavedFlash] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -83,6 +86,33 @@ export function SettingsView() {
                 {session?.deviceId ?? "—"}
               </code>
             </Row>
+          </Section>
+
+          <Section
+            title="Appearance"
+            subtitle="Hybrid keeps poster grids; Spare is a directory-style view that mirrors athion.me."
+          >
+            <div className="flex flex-col gap-2">
+              {THEME_OPTIONS.map((opt) => {
+                const active = theme === opt.key;
+                return (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => setTheme(opt.key)}
+                    className={`flex items-start justify-between gap-4 rounded-md border px-4 py-3 text-left transition ${
+                      active ? "border-foreground/60 bg-card" : "border-border bg-card/40 hover:bg-card/70"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-medium text-foreground">{opt.label}</span>
+                      <span className="text-xs text-muted-foreground">{opt.hint}</span>
+                    </div>
+                    {active ? <span className="text-xs text-muted-foreground">active</span> : null}
+                  </button>
+                );
+              })}
+            </div>
           </Section>
 
           <Section

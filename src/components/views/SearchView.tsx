@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useJellyfin } from "@/components/AuthProvider";
 import { PosterCard } from "@/components/PosterCard";
+import { MediaTable } from "@/components/MediaTable";
+import { useTheme } from "@/lib/use-theme";
 import type { BaseItemDto } from "@/lib/jellyfin/types";
 import type { View } from "@/types";
 
@@ -12,6 +14,7 @@ const DEBOUNCE_MS = 220;
  */
 export function SearchView({ onNavigate }: { onNavigate: (view: View) => void }) {
   const client = useJellyfin();
+  const [theme] = useTheme();
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<BaseItemDto[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -72,7 +75,7 @@ export function SearchView({ onNavigate }: { onNavigate: (view: View) => void })
           spellCheck={false}
         />
       </header>
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-6" data-spare-column>
         {error ? (
           <p className="text-sm text-muted-foreground">Couldn't search: {error}</p>
         ) : !query.trim() ? (
@@ -80,11 +83,15 @@ export function SearchView({ onNavigate }: { onNavigate: (view: View) => void })
             Type to search across your Jellyfin libraries.
           </p>
         ) : loading && items === null ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="aspect-[2/3] animate-pulse rounded-md bg-muted/50" />
-            ))}
-          </div>
+          theme === "spare" ? (
+            <p className="text-sm text-muted-foreground">Searching…</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="aspect-[2/3] animate-pulse rounded-md bg-muted/50" />
+              ))}
+            </div>
+          )
         ) : items && items.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Nothing matches "{query.trim()}".
@@ -95,11 +102,15 @@ export function SearchView({ onNavigate }: { onNavigate: (view: View) => void })
               {items.length} result{items.length === 1 ? "" : "s"}
               {loading ? " · refreshing…" : ""}
             </p>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-              {items.map((item) => (
-                <PosterCard key={item.Id ?? item.Name} item={item} onSelect={select} />
-              ))}
-            </div>
+            {theme === "spare" ? (
+              <MediaTable items={items} onSelect={select} />
+            ) : (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+                {items.map((item) => (
+                  <PosterCard key={item.Id ?? item.Name} item={item} onSelect={select} />
+                ))}
+              </div>
+            )}
           </>
         ) : null}
       </div>

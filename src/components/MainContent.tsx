@@ -1,8 +1,10 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useJellyfin } from "@/components/AuthProvider";
 import { PosterCard } from "@/components/PosterCard";
+import { MediaTable } from "@/components/MediaTable";
 import { SortControls } from "@/components/SortControls";
 import { loadScopeState } from "@/lib/sort-presets";
+import { useTheme } from "@/lib/use-theme";
 import type {
   BaseItemDto,
   BaseItemKind,
@@ -245,6 +247,7 @@ function ItemGrid({
   onSelect: (item: BaseItemDto) => void;
 }) {
   const client = useJellyfin();
+  const [theme] = useTheme();
   const [items, setItems] = useState<BaseItemDto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState<{ sortBy: ItemSortBy; sortOrder: SortOrder }>(() => {
@@ -289,15 +292,21 @@ function ItemGrid({
         </div>
         <SortControls scopeKey={scopeKey} onChange={setSort} />
       </header>
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-6" data-spare-column>
         {items === null ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="aspect-[2/3] animate-pulse rounded-md bg-muted/50" />
-            ))}
-          </div>
+          theme === "spare" ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="aspect-[2/3] animate-pulse rounded-md bg-muted/50" />
+              ))}
+            </div>
+          )
         ) : items.length === 0 ? (
           <Placeholder title={`Nothing here`} body="Add some content to your Jellyfin library." />
+        ) : theme === "spare" ? (
+          <MediaTable items={items} onSelect={onSelect} />
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
             {items.map((item) => (

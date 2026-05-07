@@ -5,6 +5,13 @@
 
 const STORAGE_KEY = "athion-prime:settings";
 
+export type ThemeKey = "hybrid" | "spare";
+
+export const THEME_OPTIONS: { key: ThemeKey; label: string; hint: string }[] = [
+  { key: "hybrid", label: "Hybrid", hint: "Athion chrome, poster grids for content. Recommended." },
+  { key: "spare", label: "Spare", hint: "Pure athion.me — directory tables, no posters in lists." },
+];
+
 export type QualityKey = "local" | "remote-40" | "remote-10";
 
 export const QUALITY_OPTIONS: { key: QualityKey; label: string; bitrate: number; hint: string }[] = [
@@ -15,10 +22,12 @@ export const QUALITY_OPTIONS: { key: QualityKey; label: string; bitrate: number;
 
 export interface PrimeSettings {
   quality: QualityKey;
+  theme: ThemeKey;
 }
 
 export const DEFAULT_SETTINGS: PrimeSettings = {
   quality: "local",
+  theme: "hybrid",
 };
 
 export function loadSettings(): PrimeSettings {
@@ -32,10 +41,22 @@ export function loadSettings(): PrimeSettings {
     if (parsed.quality && QUALITY_OPTIONS.some((q) => q.key === parsed.quality)) {
       valid.quality = parsed.quality;
     }
+    if (parsed.theme && THEME_OPTIONS.some((t) => t.key === parsed.theme)) {
+      valid.theme = parsed.theme;
+    }
     return valid;
   } catch {
     return DEFAULT_SETTINGS;
   }
+}
+
+/**
+ * Apply the theme attribute to <html>. Called from main.tsx on boot
+ * (synchronously, before first paint) and from SettingsView on change.
+ */
+export function applyTheme(theme: ThemeKey): void {
+  if (typeof document === "undefined") return;
+  document.documentElement.dataset.theme = theme;
 }
 
 export function saveSettings(s: PrimeSettings): void {
