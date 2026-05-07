@@ -291,7 +291,7 @@ function SpareSeriesDetail({
 
   return (
     <div className="h-full overflow-auto">
-      <article className="mx-auto flex max-w-[700px] flex-col gap-6 pt-2 pb-12 text-[13px]">
+      <article className="mx-auto flex max-w-[700px] flex-col gap-6 pt-8 pb-12 text-[13px]">
         {backdrop ? <SpareBackdrop src={backdrop} /> : null}
 
         {/* Title row mirrors ItemDetail: large title left, primary
