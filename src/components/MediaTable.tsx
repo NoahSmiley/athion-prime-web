@@ -30,7 +30,7 @@ export function MediaTable({
       {items.map((item) => {
         const tag = item.ImageTags?.Primary;
         const thumb = item.Id && tag
-          ? client.imageUrl(item.Id, { type: "Primary", maxWidth: 160, tag })
+          ? client.imageUrl(item.Id, { type: "Primary", maxWidth: 240, tag })
           : null;
         const year = item.ProductionYear ?? null;
         const runtime = item.RunTimeTicks
@@ -48,9 +48,9 @@ export function MediaTable({
             <button
               type="button"
               onClick={() => onSelect(item)}
-              className="group flex w-full items-center gap-4 border-b border-border/40 py-2 text-left transition hover:bg-accent/40"
+              className="group flex w-full items-center gap-5 border-b border-border/40 py-3 text-left transition hover:bg-accent/40"
             >
-              <div className="aspect-[2/3] h-[52px] shrink-0 overflow-hidden border border-border/60 bg-muted">
+              <div className="aspect-[2/3] h-[120px] shrink-0 overflow-hidden border border-border/60 bg-muted">
                 {thumb ? (
                   <img
                     src={thumb}
@@ -60,13 +60,18 @@ export function MediaTable({
                   />
                 ) : null}
               </div>
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <div className="truncate text-[13px] font-medium text-foreground transition group-hover:underline group-hover:underline-offset-2">
+              <div className="flex min-w-0 flex-col gap-1">
+                <div className="truncate text-[14px] font-medium text-foreground transition group-hover:underline group-hover:underline-offset-2">
                   {item.Name}
                 </div>
                 {metaParts.length > 0 ? (
-                  <div className="truncate text-[11px] text-muted-foreground">
+                  <div className="truncate text-[12px] text-muted-foreground">
                     {metaParts.join(" · ")}
+                  </div>
+                ) : null}
+                {item.Overview ? (
+                  <div className="line-clamp-2 text-[12px] text-foreground/70">
+                    {item.Overview}
                   </div>
                 ) : null}
               </div>
