@@ -104,10 +104,29 @@ export function TopNav({
               fontWeight: 500,
               display: "inline-flex",
               alignItems: "center",
+              gap: 8,
               lineHeight: 1,
             }}
           >
-            Athion Prime
+            <span>Athion</span>
+            {/* Cyan pill matching athion.me's blog-pill treatment for
+                "Press" but tinted to mark Prime distinctly. The pill
+                inherits the wordmark's visual weight without competing
+                with the rest of the nav. */}
+            <span
+              style={{
+                background: "#22d3ee",
+                color: "#060606",
+                padding: "2px 6px",
+                fontSize: 11,
+                fontWeight: 500,
+                lineHeight: 1,
+                borderRadius: 2,
+                display: "inline-block",
+              }}
+            >
+              Prime
+            </span>
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             {SIDEBAR_DESTINATIONS.filter((d) => d.kind !== "home").map((d) => {
