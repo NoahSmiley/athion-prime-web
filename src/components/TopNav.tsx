@@ -90,25 +90,47 @@ export function TopNav({
             height: 24,
           }}
         >
-          <button
-            type="button"
-            onClick={() => onChange({ kind: "home" })}
-            onMouseEnter={() => setHoverKey(null)}
-            style={{
-              background: "none",
-              border: "none",
-              padding: 0,
-              cursor: "pointer",
-              fontFamily: "inherit",
-              color: "#fff",
-              fontWeight: 500,
-              display: "inline-flex",
-              alignItems: "center",
-              lineHeight: 1,
-            }}
-          >
-            Athion Prime
-          </button>
+          <div className="inline-flex items-baseline gap-2">
+            <button
+              type="button"
+              onClick={() => onChange({ kind: "home" })}
+              onMouseEnter={() => setHoverKey(null)}
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                color: "#fff",
+                fontWeight: 500,
+                display: "inline-flex",
+                alignItems: "center",
+                lineHeight: 1,
+              }}
+            >
+              Athion Prime
+            </button>
+            {/* Tiny credit to the upstream Waverunner project (Trevor Kerney's
+                fork that this SPA descends from). Quiet — 9px, muted, opens
+                in a new tab. Stays in the top-left next to the wordmark. */}
+            <a
+              href="https://github.com/trevorkerney/Waverunner"
+              target="_blank"
+              rel="noreferrer"
+              title="Powered by Waverunner — fork of Trevor Kerney's project"
+              style={{
+                fontSize: 9,
+                color: "#555",
+                textDecoration: "none",
+                lineHeight: 1,
+                transition: "color 0.15s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#828282")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "#555")}
+            >
+              powered by Waverunner
+            </a>
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             {SIDEBAR_DESTINATIONS.filter((d) => d.kind !== "home").map((d) => {
               const isTracked = trackKey === d.kind;

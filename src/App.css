@@ -251,19 +251,29 @@ html[data-theme="spare"] [data-prime-content] > * {
   padding-left: 24px !important;
   padding-right: 24px !important;
 }
-/* Reset horizontal padding only on layout-level wrappers that own the
-   column gutter — not on inner content like table cells, list rows, or
-   buttons that use pr-3 / pl-2 to space their internal columns.
-   The column wrapper [data-prime-content] > * already has the 24px
-   gutter, so its direct children with their own px-* / p-* shouldn't
-   stack a second gutter. Anything below that depth (tables, articles)
-   keeps its internal padding. */
-html[data-theme="spare"] [data-prime-content] > * > [class*="px-"],
-html[data-theme="spare"] [data-prime-content] > * > [class*="pl-"],
-html[data-theme="spare"] [data-prime-content] > * > [class*="pr-"],
-html[data-theme="spare"] [data-prime-content] > * > [class*="p-6"],
-html[data-theme="spare"] [data-prime-content] > * > [class*="p-8"],
-html[data-theme="spare"] [data-prime-content] > * > [class*="p-10"] {
+/* Reset horizontal padding on layout-level wrappers inside the column.
+   The column wrapper [data-prime-content] > * already owns the 24px
+   gutter, so any descendant with px-6 / px-8 / p-6 / p-8 (used by
+   the original Hybrid layouts to fake a side gutter) would stack a
+   second gutter and push the content too far right. We zero those.
+
+   Inner content like table cells or list rows that use pr-3 / pl-2
+   to space their *own* columns still works because Tailwind's pr-3
+   class produces padding-right only — our padding-left/-right reset
+   ignores classes that don't appear in the selector list (pr-3 isn't
+   pl-* / pr-* / px-* — wait, pr-3 IS pr-*. So pr-3 also gets reset.
+   That's a problem for table cell gutters; those use pr-{n} for
+   inter-column spacing.
+
+   Fix: only reset on wrappers whose paddings are 6, 8, or 10 (the
+   layout-level sizes). Cell-level gutters (pr-3, pr-4, pr-6) get
+   left alone. */
+html[data-theme="spare"] [data-prime-content] [class*="px-6"],
+html[data-theme="spare"] [data-prime-content] [class*="px-8"],
+html[data-theme="spare"] [data-prime-content] [class*="px-10"],
+html[data-theme="spare"] [data-prime-content] [class*="p-6"],
+html[data-theme="spare"] [data-prime-content] [class*="p-8"],
+html[data-theme="spare"] [data-prime-content] [class*="p-10"] {
   padding-left: 0 !important;
   padding-right: 0 !important;
 }
