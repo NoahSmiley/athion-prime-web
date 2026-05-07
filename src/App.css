@@ -251,6 +251,15 @@ html[data-theme="spare"] [data-prime-content] > * {
   padding-left: 24px !important;
   padding-right: 24px !important;
 }
+/* Spare mode: every view starts with its <header> as the first child of
+   the column root. Give that header a generous top margin so the title
+   has room to breathe under the fixed top nav (which is at top: 56 +
+   24 = 80). Detail views handle their own top padding (pt-32) on the
+   <article> so they keep clearance from the backdrop wash too. */
+html[data-theme="spare"] [data-prime-content] > * > header {
+  margin-top: 48px;
+}
+
 /* Reset horizontal padding on layout-level wrappers inside the column.
    The column wrapper [data-prime-content] > * already owns the 24px
    gutter, so any descendant with px-6 / px-8 / p-6 / p-8 (used by

@@ -242,7 +242,7 @@ function SpareItemDetail({
         <SpareBackdrop src={backdrop} />
       ) : null}
 
-      <article className="relative z-10 mx-auto flex max-w-[700px] flex-col gap-5 pt-16 pb-12 text-[13px]">
+      <article className="relative z-10 mx-auto flex max-w-[700px] flex-col gap-5 pt-32 pb-12 text-[13px]">
         <header className="flex flex-col gap-2">
           <h1 className="text-[18px] font-medium text-foreground">{item.Name}</h1>
           {meta.length > 0 ? (
