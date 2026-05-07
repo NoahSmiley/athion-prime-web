@@ -1,13 +1,7 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useJellyfin } from "@/components/AuthProvider";
 import { PosterCard } from "@/components/PosterCard";
 import { SortControls } from "@/components/SortControls";
-import { ItemDetail } from "@/components/views/ItemDetail";
-import { SeriesDetail } from "@/components/views/SeriesDetail";
-import { HomeView } from "@/components/views/HomeView";
-import { SearchView } from "@/components/views/SearchView";
-import { LiveTvView } from "@/components/views/LiveTvView";
-import { SettingsView } from "@/components/views/SettingsView";
 import { loadScopeState } from "@/lib/sort-presets";
 import type {
   BaseItemDto,
@@ -16,6 +10,28 @@ import type {
   SortOrder,
 } from "@/lib/jellyfin/types";
 import type { LibraryKind, View } from "@/types";
+
+// Lazy: every leaf view splits into its own chunk so the initial bundle
+// only carries the App shell + the active view. Switching views downloads
+// the next chunk (cached after first visit).
+const ItemDetail = lazy(() =>
+  import("@/components/views/ItemDetail").then((m) => ({ default: m.ItemDetail })),
+);
+const SeriesDetail = lazy(() =>
+  import("@/components/views/SeriesDetail").then((m) => ({ default: m.SeriesDetail })),
+);
+const HomeView = lazy(() =>
+  import("@/components/views/HomeView").then((m) => ({ default: m.HomeView })),
+);
+const SearchView = lazy(() =>
+  import("@/components/views/SearchView").then((m) => ({ default: m.SearchView })),
+);
+const LiveTvView = lazy(() =>
+  import("@/components/views/LiveTvView").then((m) => ({ default: m.LiveTvView })),
+);
+const SettingsView = lazy(() =>
+  import("@/components/views/SettingsView").then((m) => ({ default: m.SettingsView })),
+);
 
 const KIND_TO_INCLUDE: Record<LibraryKind, BaseItemKind> = {
   movies: "Movie" as BaseItemKind,
@@ -31,6 +47,18 @@ export function MainContent({
   onNavigate: (view: View) => void;
   onPlay: (item: BaseItemDto) => void;
 }) {
+  return (
+    <Suspense fallback={<ChunkFallback />}>
+      {renderView(view, onNavigate, onPlay)}
+    </Suspense>
+  );
+}
+
+function renderView(
+  view: View,
+  onNavigate: (view: View) => void,
+  onPlay: (item: BaseItemDto) => void,
+) {
   switch (view.kind) {
     case "home":
       return <HomeView onNavigate={onNavigate} />;
@@ -49,6 +77,12 @@ export function MainContent({
     case "genre":
       return <GenreView view={view} onNavigate={onNavigate} />;
   }
+}
+
+function ChunkFallback() {
+  // Bare div with the bg color so the chunk transition doesn't flash white;
+  // chunks are tiny (~10-30 KB) so a real spinner would feel laggier.
+  return <div className="h-full w-full bg-background" />;
 }
 
 // ---------------------------------------------------------------------------
