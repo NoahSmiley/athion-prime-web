@@ -90,7 +90,7 @@ export function TopNav({
             height: 24,
           }}
         >
-          <div className="inline-flex items-baseline gap-2">
+          <div className="inline-flex items-center gap-3">
             <button
               type="button"
               onClick={() => onChange({ kind: "home" })}
@@ -111,22 +111,21 @@ export function TopNav({
               Athion Prime
             </button>
             {/* Tiny credit to the upstream Waverunner project (Trevor Kerney's
-                fork that this SPA descends from). Quiet — 9px, muted, with
-                the W-wave mark rendered grayscale at 10px. Opens in a new
-                tab. Stays in the top-left next to the wordmark. */}
+                fork that this SPA descends from). 'powered by' / 'Waverunner'
+                are stacked on two tight lines so the credit reads as a small
+                vertical block; the W-wave mark sits at the right end at the
+                wordmark's cap height. */}
             <a
               href="https://github.com/trevorkerney/Waverunner"
               target="_blank"
               rel="noreferrer"
               title="Powered by Waverunner — fork of Trevor Kerney's project"
               style={{
-                fontSize: 9,
                 color: "#555",
                 textDecoration: "none",
-                lineHeight: 1,
                 display: "inline-flex",
                 alignItems: "center",
-                gap: 4,
+                gap: 5,
                 transition: "color 0.15s, opacity 0.15s",
               }}
               onMouseEnter={(e) => {
@@ -140,19 +139,31 @@ export function TopNav({
                 if (img) img.style.opacity = "0.6";
               }}
             >
+              <span
+                style={{
+                  fontSize: 8,
+                  lineHeight: 1.1,
+                  letterSpacing: 0.2,
+                  textAlign: "right",
+                  display: "inline-flex",
+                  flexDirection: "column",
+                }}
+              >
+                <span>powered by</span>
+                <span>Waverunner</span>
+              </span>
               <img
                 src="/logo256.png"
                 alt=""
                 aria-hidden="true"
                 style={{
-                  height: 10,
-                  width: 10,
+                  height: 14,
+                  width: 14,
                   opacity: 0.6,
                   filter: "grayscale(1)",
                   transition: "opacity 0.15s",
                 }}
               />
-              <span>powered by Waverunner</span>
             </a>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
