@@ -4,6 +4,8 @@ import { PosterCard } from "@/components/PosterCard";
 import { SortControls } from "@/components/SortControls";
 import { ItemDetail } from "@/components/views/ItemDetail";
 import { SeriesDetail } from "@/components/views/SeriesDetail";
+import { HomeView } from "@/components/views/HomeView";
+import { SearchView } from "@/components/views/SearchView";
 import { loadScopeState } from "@/lib/sort-presets";
 import type {
   BaseItemDto,
@@ -29,11 +31,11 @@ export function MainContent({
 }) {
   switch (view.kind) {
     case "home":
-      return <Placeholder title="Home" body="Continue Watching, Latest Movies, Latest Shows. (Phase 5.)" />;
+      return <HomeView onNavigate={onNavigate} />;
     case "livetv":
       return <Placeholder title="Live TV" body="Xtream-backed channel browser + EPG. (Phase 6.)" />;
     case "search":
-      return <Placeholder title="Search" body="Live search across libraries. (Phase 5.)" />;
+      return <SearchView onNavigate={onNavigate} />;
     case "settings":
       return <SettingsView />;
     case "item":

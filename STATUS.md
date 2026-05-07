@@ -58,7 +58,7 @@ Future deploy lives at `prime.athion.me` on Proxmox CT 111
 | 3c | "Waverunner DNA" — breadcrumbs + forward stack, saveable sort presets per scope, sub-tree sidebar (All/By Genre/Collections), polished poster cards, "Powered by Waverunner" footer w/ logo | ✅ |
 | design pass | OpenAI Sans + athion `#060606`/`#c8c8c8` palette + monochrome Waverunner logo | ✅ (was Phase 7's design half) |
 | 4 | Item detail panel, series detail with seasons + episodes, `hls.js` player overlay, PlaybackInfo round-trip, codec capability detection + force-h264 retry, playback reporting, Skip Intro / Next Episode chapter buttons, auto-advance on `ended` | ✅ |
-| 5 | Home view (Continue Watching / Latest Movies / Latest Shows / Collections / Live TV row); Search view | ⏳ pending |
+| 5 | Home view (Continue Watching / Latest Movies / Latest Shows / Collections / Live TV row); Search view | ✅ |
 | 6 | Live TV — Xtream proxy on athion.me, channel browser + EPG, channel playback through the Phase 4 player | ⏳ pending |
 | 7 leftover | Settings page rebuild (account info, quality preference, logout). Design system already shipped early. | ⏳ pending |
 | 8 | Deploy: nginx on CT 111, build/rsync script, `prime.athion.me` DNS + 443 port forward | ⏳ pending |
@@ -211,39 +211,23 @@ curl -s "http://192.168.0.159:8096/Items?userId=$USERID&IncludeItemTypes=Movie&R
 
 ## Picking up — what's next, prioritized
 
-### Phase 5 — Home view + Search   [START HERE]
+### Phase 5 — Home view + Search   [DONE 2026-05-06]
 
-Goal: replace the "Home (Phase 5)" placeholder with the tvOS-style
-horizontal-scrolling rows, and the "Search (Phase 5)" placeholder with
-a working search.
+Shipped:
+- `src/components/views/HomeView.tsx` — horizontal-scrolling rows for
+  Continue Watching, Latest Movies, Latest Shows, Collections, plus a
+  Live TV placeholder card. Each row loads independently and hides
+  itself on empty so the page stays terse. Embla carousel with
+  per-row `‹ ›` controls that fade in on group hover.
+- `src/components/views/SearchView.tsx` — debounced (220ms) input
+  with auto-focus, stale-response guard via request-id, skeleton
+  loading, empty/error states, and a "refreshing…" inline indicator
+  while a new query is in flight.
+- `src/components/MainContent.tsx` — dispatches `home` / `search` to
+  the new views. The `livetv` case is still a placeholder until
+  Phase 6.
 
-Files to add:
-- `src/components/views/HomeView.tsx` — horizontal rows:
-  Continue Watching (`client.getResumeItems({limit:20})`), Latest Movies
-  (`getLatestItems({includeItemTypes:["Movie"], limit:20})`), Latest
-  Shows (`includeItemTypes:["Series"]`), Collections (`includeItemTypes:
-  ["BoxSet"]`), placeholder Live TV row (until Phase 6).
-- `src/components/views/SearchView.tsx` — debounced text input →
-  `client.search(query)` → flat results grid using `PosterCard`.
-
-Files to edit:
-- `src/components/MainContent.tsx` — wire `HomeView` and `SearchView`
-  into the dispatch (replace the `Placeholder` cases).
-
-UX detail: tvOS Prime uses `embla-carousel-react` (already installed
-upstream) for the rows. Existing component at
-`node_modules/embla-carousel-react`.
-
-Pattern for rows:
-
-```tsx
-function HomeRow({ title, fetcher, onSelect }: {...}) {
-  // useEffect to load via fetcher, then render a horizontally-scrollable
-  // strip of PosterCards; "See all" link drills into a full grid.
-}
-```
-
-### Phase 6 — Live TV (Xtream)
+### Phase 6 — Live TV (Xtream)   [START HERE]
 
 Two halves:
 
@@ -376,4 +360,4 @@ the test content for the dev session.
 
 ---
 
-_Last updated: 2026-05-06 (Phase 4 + design pass shipped, ready for Phase 5)._
+_Last updated: 2026-05-06 (Phase 5 shipped — Home + Search live; ready for Phase 6 Live TV)._
