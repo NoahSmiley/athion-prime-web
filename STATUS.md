@@ -59,7 +59,7 @@ Future deploy lives at `prime.athion.me` on Proxmox CT 111
 | design pass | OpenAI Sans + athion `#060606`/`#c8c8c8` palette + monochrome Waverunner logo | ✅ (was Phase 7's design half) |
 | 4 | Item detail panel, series detail with seasons + episodes, `hls.js` player overlay, PlaybackInfo round-trip, codec capability detection + force-h264 retry, playback reporting, Skip Intro / Next Episode chapter buttons, auto-advance on `ended` | ✅ |
 | 5 | Home view (Continue Watching / Latest Movies / Latest Shows / Collections / Live TV row); Search view | ✅ |
-| 6 | Live TV — Xtream proxy on athion.me, channel browser + EPG, channel playback through the Phase 4 player | ⏳ pending |
+| 6 | Live TV — Xtream proxy on athion.me, channel browser + EPG, channel playback through hls.js | ✅ |
 | 7 leftover | Settings page rebuild (account info, quality preference, logout). Design system already shipped early. | ⏳ pending |
 | 8 | Deploy: nginx on CT 111, build/rsync script, `prime.athion.me` DNS + 443 port forward | ⏳ pending |
 
@@ -227,7 +227,34 @@ Shipped:
   the new views. The `livetv` case is still a placeholder until
   Phase 6.
 
-### Phase 6 — Live TV (Xtream)   [START HERE]
+### Phase 6 — Live TV (Xtream)   [DONE 2026-05-06]
+
+Shipped:
+- **athion.me** — server-side `src/lib/xtream/client.ts`,
+  `src/lib/xtream/route-helpers.ts`, and four routes under
+  `/api/prime/xtream/`: `categories`, `streams` (`?category=`),
+  `epg/[streamId]` (5-min `Cache-Control`), and `play/[streamId]`
+  (302 redirect to upstream HLS so credentials never leave the server).
+  EPG title/description are base64-decoded server-side.
+- **Auth** — added `resolveSession(req)` that prefers the cookie and
+  falls back to `Authorization: Bearer <jwt>` (for fetch calls) or
+  `?dev_token=<jwt>` (for the play redirect, since `<video>` and
+  hls.js can't easily attach headers). Production uses the cookie via
+  `Domain=.athion.me`.
+- **SPA** — `src/lib/xtream/client.ts` is the typed wrapper, attaches
+  `VITE_PRIME_DEV_JWT` as Bearer auth in dev. `LiveTvView` mirrors
+  tvOS Prime's section model (Entertainment / Sports / News / Kids /
+  Movies / Music / Lifestyle / 4K Ultra HD) using the same keyword
+  heuristic over Xtream categories. Per-channel cards show their
+  current EPG title; click opens a fullscreen `<video>` overlay
+  driven by hls.js (or native HLS on Safari).
+- **`.env.production`** on CT 109 has `XTREAM_BASE_URL`,
+  `XTREAM_USERNAME`, `XTREAM_PASSWORD` — same creds as the tvOS app.
+
+Verified end-to-end: 8 sections render, Entertainment lists 424 real
+channels, A&E HD plays at 1280×720 in 4–5s.
+
+### Phase 7 leftover — Settings page rebuild   [START HERE]
 
 Two halves:
 
@@ -251,10 +278,7 @@ Two halves:
 - Port the category mapping from the tvOS `Prime/IPTV/` directory
   (Entertainment / Sports / News / Kids / Movies / Music / Lifestyle / 4K).
 
-The user has not yet provided Xtream credentials — ask before
-starting Phase 6 work in athion.me's env.
-
-### Phase 7 leftover — Settings page rebuild
+### Phase 7 leftover — Settings page rebuild (detail)
 
 Now that the design system is live, build out a real settings page
 under `src/components/views/SettingsView.tsx`:
@@ -360,4 +384,4 @@ the test content for the dev session.
 
 ---
 
-_Last updated: 2026-05-06 (Phase 5 shipped — Home + Search live; ready for Phase 6 Live TV)._
+_Last updated: 2026-05-06 (Phase 6 shipped — Live TV is end-to-end; ready for Phase 7 Settings)._
