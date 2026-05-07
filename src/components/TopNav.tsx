@@ -116,10 +116,10 @@ export function TopNav({
             <span
               style={{
                 background: "#22d3ee",
-                color: "#060606",
+                color: "#fff",
                 padding: "2px 6px",
                 fontSize: 11,
-                fontWeight: 500,
+                fontWeight: 700,
                 lineHeight: 1,
                 borderRadius: 2,
                 display: "inline-block",
