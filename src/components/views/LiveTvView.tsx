@@ -117,6 +117,61 @@ export function LiveTvView() {
     );
   }
 
+  // Spare layout: stacked single column matching the rest of the spare
+  // chrome — section bar across the top, channel list below. No internal
+  // sidebar, no card grid. Works with the 700px column constraint.
+  if (theme === "spare") {
+    return (
+      <div className="flex h-full flex-col">
+        <header className="flex flex-col gap-3 pt-12 pb-5">
+          <h1 className="text-[18px] font-medium text-foreground">Live TV</h1>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search channels…"
+            className="w-full border border-border bg-transparent px-3 py-2 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-foreground/60"
+          />
+          {/* Horizontal section selector — wraps on overflow. Active is
+              white, inactive is muted. No icons, no boxes. */}
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border/40 pb-4 text-[13px]">
+            {sections.map((s) => (
+              <button
+                key={s.name}
+                type="button"
+                onClick={() => setActiveSection(s.name)}
+                className={
+                  activeSection === s.name
+                    ? "text-foreground"
+                    : "text-muted-foreground transition hover:text-foreground"
+                }
+              >
+                {s.name}
+              </button>
+            ))}
+          </nav>
+          <p className="text-[11px] text-muted-foreground">
+            {activeSection ?? "—"}
+            {visibleStreams.length > 0 ? ` · ${visibleStreams.length} channel${visibleStreams.length === 1 ? "" : "s"}` : ""}
+          </p>
+        </header>
+        <div className="flex-1 overflow-auto pb-12">
+          {loadingStreams ? (
+            <p className="text-[13px] text-muted-foreground">Loading channels…</p>
+          ) : visibleStreams.length === 0 ? (
+            <p className="text-[13px] text-muted-foreground">
+              {search.trim() ? `No channels match "${search.trim()}".` : "No channels in this section."}
+            </p>
+          ) : (
+            <ChannelTable streams={visibleStreams} onSelect={setPlaying} />
+          )}
+        </div>
+        {playing && <ChannelPlayer stream={playing} onClose={() => setPlaying(null)} />}
+      </div>
+    );
+  }
+
+  // Hybrid: original card grid + left section rail.
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-end justify-between gap-4 border-b border-border px-8 py-5">
@@ -158,24 +213,18 @@ export function LiveTvView() {
           </ul>
         </nav>
 
-        {/* Channel grid (Hybrid) or directory table (Spare) */}
+        {/* Channel grid */}
         <div className="flex-1 overflow-auto p-6">
           {loadingStreams ? (
-            theme === "spare" ? (
-              <p className="text-sm text-muted-foreground">Loading channels…</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <div key={i} className="aspect-video animate-pulse rounded-md bg-muted/50" />
-                ))}
-              </div>
-            )
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="aspect-video animate-pulse rounded-md bg-muted/50" />
+              ))}
+            </div>
           ) : visibleStreams.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {search.trim() ? `No channels match "${search.trim()}".` : "No channels in this section."}
             </p>
-          ) : theme === "spare" ? (
-            <ChannelTable streams={visibleStreams} onSelect={setPlaying} />
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {visibleStreams.map((s) => (

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Play, Clock, Star } from "lucide-react";
 import { useJellyfin } from "@/components/AuthProvider";
+import { SpareBackdrop } from "@/components/SpareBackdrop";
 import { useTheme } from "@/lib/use-theme";
 import type { BaseItemDto } from "@/lib/jellyfin/types";
 
