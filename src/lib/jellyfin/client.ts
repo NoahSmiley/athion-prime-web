@@ -266,14 +266,14 @@ export function createJellyfinClient(session: JellyfinSession): JellyfinClient {
       if (caps.hevc) videoCodecs.push("hevc");
       if (caps.av1) videoCodecs.push("av1");
       if (caps.vp9) videoCodecs.push("vp9");
-      // When source codec matches one in this list, Jellyfin codec-copies
-      // (remux only) instead of re-encoding — preserves source quality.
-      const transcodeVideoCodecs = videoCodecs.join(",");
-      const directPlayVideoCodecs = videoCodecs.join(",");
 
-      // EAC3/AC3 audio decoding is widely supported in modern browsers; falls
-      // back to AAC transcode automatically if not.
-      const audioCodecs = "aac,mp3,opus,flac,ac3,eac3";
+      // Audio: AAC is universally browser-decodable. EAC3/AC3 work on Chrome
+      // on some platforms but break Linux Chromium / Firefox. When the user
+      // already hit a codec error, restrict to AAC + MP3 only.
+      const transcodeAudioCodecs = forceH264 ? "aac,mp3" : "aac,mp3,ac3,eac3";
+      const directPlayAudioCodecs = forceH264
+        ? "aac,mp3,opus,flac"
+        : "aac,mp3,opus,flac,ac3,eac3";
 
       const profile = {
         Name: "Athion Prime Web",
@@ -281,15 +281,20 @@ export function createJellyfinClient(session: JellyfinSession): JellyfinClient {
         MaxStaticBitrate: 100_000_000,
         MusicStreamingTranscodingBitrate: 192_000,
         DirectPlayProfiles: [
-          { Container: "mp4,m4v,webm", Type: "Video", VideoCodec: directPlayVideoCodecs, AudioCodec: audioCodecs },
+          {
+            Container: "mp4,m4v,webm",
+            Type: "Video",
+            VideoCodec: videoCodecs.join(","),
+            AudioCodec: directPlayAudioCodecs,
+          },
         ],
         TranscodingProfiles: [
           {
             Container: "ts",
             Type: "Video",
             Protocol: "hls",
-            VideoCodec: transcodeVideoCodecs,
-            AudioCodec: "aac,mp3,ac3,eac3",
+            VideoCodec: videoCodecs.join(","),
+            AudioCodec: transcodeAudioCodecs,
             BreakOnNonKeyFrames: true,
           },
         ],
@@ -334,7 +339,24 @@ export function createJellyfinClient(session: JellyfinSession): JellyfinClient {
         return new URL(ms.DirectStreamUrl, session.jellyfinUrl).toString();
       }
       if (ms.TranscodingUrl) {
-        return new URL(ms.TranscodingUrl, session.jellyfinUrl).toString();
+        const url = new URL(ms.TranscodingUrl, session.jellyfinUrl);
+        // Force a sane H.264 profile + level when we're transcoding to h264.
+        // Without these, Jellyfin sometimes stamps the manifest with avc1.424029
+        // (Baseline level 4.1) but encodes at 4K — browsers refuse the
+        // out-of-spec combo with manifestIncompatibleCodecsError.
+        if (videoCodecs[0] === "h264" && videoCodecs.length === 1) {
+          url.searchParams.set("Profile", "high");
+          url.searchParams.set("Level", "51");
+          if (forceH264) {
+            // Cap to 1080p on the fallback path so the encoder picks a level/
+            // resolution combo guaranteed to play in any browser. 4K transcode
+            // to h264 stresses cheap decoders anyway; 1080p at ~28 Mbps is
+            // visually equivalent at typical viewing distances.
+            url.searchParams.set("MaxWidth", "1920");
+            url.searchParams.set("MaxHeight", "1080");
+          }
+        }
+        return url.toString();
       }
       // Last-resort: build a master.m3u8 by hand
       return this.hlsUrl(itemId, ms.Id);
