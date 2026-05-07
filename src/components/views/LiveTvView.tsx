@@ -123,8 +123,8 @@ export function LiveTvView() {
   if (theme === "spare") {
     return (
       <div className="flex h-full flex-col">
-        <header className="flex flex-col gap-3 pb-5">
-          <h1 className="text-[18px] font-medium text-foreground">Live TV</h1>
+        <header className="flex flex-col gap-3 border-b border-border py-5">
+          <h1 className="text-xl font-medium text-foreground">Live TV</h1>
           <input
             type="search"
             value={search}
@@ -134,7 +134,7 @@ export function LiveTvView() {
           />
           {/* Horizontal section selector — wraps on overflow. Active is
               white, inactive is muted. No icons, no boxes. */}
-          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border/40 pb-4 text-[13px]">
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px]">
             {sections.map((s) => (
               <button
                 key={s.name}

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { fetchJellyfinSession, redirectToLogin, type JellyfinSession } from "@/lib/auth/session";
 import { createJellyfinClient, type JellyfinClient } from "@/lib/jellyfin/client";
 
@@ -46,9 +46,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     error: null,
   });
 
+  // Single in-flight refresh promise so concurrent 401s share one fetch
+  // instead of stampeding the token endpoint.
+  const refreshInFlight = useRef<Promise<JellyfinSession | null> | null>(null);
+
+  const refresh = useCallback(async (): Promise<JellyfinSession | null> => {
+    if (refreshInFlight.current) return refreshInFlight.current;
+    const p = (async () => {
+      try {
+        const next = await fetchJellyfinSession();
+        if (next) {
+          setState((s) => ({ ...s, session: next, status: "ready", error: null }));
+          return next;
+        }
+        // Refresh failed (still 401). In prod, send the user to login.
+        if (import.meta.env.PROD) redirectToLogin();
+        return null;
+      } finally {
+        refreshInFlight.current = null;
+      }
+    })();
+    refreshInFlight.current = p;
+    return p;
+  }, []);
+
   const client = useMemo(
-    () => (state.session ? createJellyfinClient(state.session) : null),
-    [state.session]
+    () => (state.session ? createJellyfinClient(state.session, refresh) : null),
+    [state.session, refresh]
   );
 
   useEffect(() => {

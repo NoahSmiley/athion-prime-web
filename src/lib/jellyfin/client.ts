@@ -130,13 +130,42 @@ export interface JellyfinClient {
   reportPlaybackStopped(itemId: string, positionTicks: number): Promise<void>;
 }
 
-export function createJellyfinClient(session: JellyfinSession): JellyfinClient {
+export function createJellyfinClient(
+  session: JellyfinSession,
+  onUnauthorized?: () => Promise<JellyfinSession | null>,
+): JellyfinClient {
   const jellyfin = new Jellyfin({
     clientInfo: CLIENT_INFO,
     deviceInfo: { name: "Prime Web", id: session.deviceId },
   });
   const api = jellyfin.createApi(session.jellyfinUrl);
   api.accessToken = session.accessToken;
+
+  // Auto-refresh on 401 — when Jellyfin invalidates our access token (e.g.
+  // after a long idle), refetch a new session via the provided callback,
+  // patch the access token onto the live Api instance + headers, and
+  // replay the original request once. Caps at one retry to avoid loops if
+  // the refresh itself returns 401.
+  if (onUnauthorized) {
+    api.axiosInstance.interceptors.response.use(
+      (r) => r,
+      async (err: unknown) => {
+        const e = err as { response?: { status?: number }; config?: { _primeRetried?: boolean; headers?: Record<string, string> } };
+        if (e.response?.status !== 401 || !e.config || e.config._primeRetried) {
+          throw err;
+        }
+        const fresh = await onUnauthorized();
+        if (!fresh) throw err;
+        api.accessToken = fresh.accessToken;
+        e.config._primeRetried = true;
+        if (e.config.headers) {
+          // Jellyfin uses `Authorization: MediaBrowser Token=<token>`
+          e.config.headers["Authorization"] = `MediaBrowser Token=${fresh.accessToken}`;
+        }
+        return api.axiosInstance.request(e.config);
+      },
+    );
+  }
 
   const itemsApi = getItemsApi(api);
   const userLibraryApi = getUserLibraryApi(api);

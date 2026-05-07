@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useAuth } from "@/components/AuthProvider";
 import {
   SIDEBAR_DESTINATIONS,
   viewToSidebarLeaf,
@@ -35,6 +36,11 @@ export function TopNav({
   const [hoverKey, setHoverKey] = useState<SidebarKind | null>(null);
   const [underline, setUnderline] = useState<{ left: number; width: number } | null>(null);
   const [underlineVisible, setUnderlineVisible] = useState(false);
+  const { session } = useAuth();
+
+  // Strip the 'athion_' prefix our Jellyfin admin auto-provisioner adds
+  // to usernames so the visible badge reads as the athion username.
+  const displayName = session?.username?.replace(/^athion_/, "") ?? null;
 
   const activeKey = viewToSidebarLeaf(view)?.kind ?? null;
   const trackKey = hoverKey ?? activeKey;
@@ -160,6 +166,36 @@ export function TopNav({
                 </button>
               );
             })}
+            {/* Signed-in indicator — small muted username; clicking it
+                routes to Settings where Sign-out lives. Hidden when
+                no session (initial bootstrap / dev-no-token). */}
+            {displayName ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setHoverKey(null);
+                  onChange({ kind: "settings" });
+                }}
+                onMouseEnter={() => setHoverKey(null)}
+                title={`Signed in as ${displayName} — click for Settings`}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  fontSize: 11,
+                  lineHeight: 1,
+                  color: "#555",
+                  marginLeft: 4,
+                  transition: "color 0.15s",
+                }}
+                onFocus={(e) => (e.currentTarget.style.color = "#aaa")}
+                onBlur={(e) => (e.currentTarget.style.color = "#555")}
+              >
+                {displayName}
+              </button>
+            ) : null}
           </div>
         </nav>
 
