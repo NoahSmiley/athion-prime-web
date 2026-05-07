@@ -111,8 +111,9 @@ export function TopNav({
               Athion Prime
             </button>
             {/* Tiny credit to the upstream Waverunner project (Trevor Kerney's
-                fork that this SPA descends from). Quiet — 9px, muted, opens
-                in a new tab. Stays in the top-left next to the wordmark. */}
+                fork that this SPA descends from). Quiet — 9px, muted, with
+                the W-wave mark rendered grayscale at 10px. Opens in a new
+                tab. Stays in the top-left next to the wordmark. */}
             <a
               href="https://github.com/trevorkerney/Waverunner"
               target="_blank"
@@ -123,12 +124,35 @@ export function TopNav({
                 color: "#555",
                 textDecoration: "none",
                 lineHeight: 1,
-                transition: "color 0.15s",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                transition: "color 0.15s, opacity 0.15s",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#828282")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "#555")}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#828282";
+                const img = e.currentTarget.querySelector("img");
+                if (img) img.style.opacity = "1";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "#555";
+                const img = e.currentTarget.querySelector("img");
+                if (img) img.style.opacity = "0.6";
+              }}
             >
-              powered by Waverunner
+              <img
+                src="/logo256.png"
+                alt=""
+                aria-hidden="true"
+                style={{
+                  height: 10,
+                  width: 10,
+                  opacity: 0.6,
+                  filter: "grayscale(1)",
+                  transition: "opacity 0.15s",
+                }}
+              />
+              <span>powered by Waverunner</span>
             </a>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
