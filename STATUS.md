@@ -61,7 +61,7 @@ Future deploy lives at `prime.athion.me` on Proxmox CT 111
 | 5 | Home view (Continue Watching / Latest Movies / Latest Shows / Collections / Live TV row); Search view | ✅ |
 | 6 | Live TV — Xtream proxy on athion.me, channel browser + EPG, channel playback through hls.js | ✅ |
 | 7 leftover | Settings page rebuild (account info, quality preference, logout). Design system already shipped early. | ✅ |
-| 8 | Deploy: nginx on CT 111, build/rsync script, `prime.athion.me` DNS + 443 port forward | ⏳ pending |
+| 8 | Deploy: nginx on CT 111, build/rsync script, `prime.athion.me` via Cloudflare tunnel | ✅ |
 
 ---
 
@@ -277,7 +277,43 @@ Shipped:
   cross-origin. Production clears the shared `.athion.me` cookie so
   Prime / Press / athion.me all sign out together.
 
-### Phase 8 — Deploy   [START HERE]
+### Phase 8 — Deploy   [DONE 2026-05-06]
+
+Shipped:
+- **CT 111 `prime-web`** at `192.168.0.148` running nginx 1.26.3 on
+  Debian 13. Site config at `/etc/nginx/sites-available/prime-web`:
+  long-cache `Cache-Control: public, max-age=31536000, immutable` for
+  `/assets/*`, `no-cache` everywhere else, and `try_files $uri /index.html`
+  so the SPA's deep links work.
+- **Cloudflare tunnel** — added a route to the existing
+  `646ce087-...` tunnel: `prime.athion.me → http://192.168.0.148:80`.
+  Same pattern as everything else on the homelab; CF terminates TLS,
+  no port forward needed.
+- **Build env** — `VITE_ATHION_API_BASE=https://athion.me` and
+  `VITE_ATHION_LOGIN_URL=https://athion.me/login` set at build time so
+  the SPA hits production athion.me for SSO + Xtream proxy.
+- **`scripts/deploy.sh`** — one-command deploy from any machine on the
+  home LAN: builds with the prod env, rsyncs `dist/` to CT 111, reloads
+  nginx. Run with `./scripts/deploy.sh`.
+- **HomeView cleanup** — dropped the now-stale "Coming in Phase 6"
+  Live TV placeholder row.
+
+Verified end-to-end: `https://prime.athion.me/` serves the SPA over
+HTTP/2, real cookie SSO from athion.me, all five Phase 5 home rows
+render with live Jellyfin data.
+
+### Next up — polish + maintenance
+
+The phased build is done. Open follow-ups (none blocking):
+
+- **Bundle size** — `dist/assets/index-*.js` is ~917 KB raw / 279 KB
+  gzipped, mostly hls.js (~370 KB). LiveTvView dynamically imports it,
+  but PrimePlayer still imports statically — Vite groups them anyway.
+  Code-splitting the player route would shave the initial payload.
+- **Auto-refresh on 401** — `AuthProvider` should retry once when the
+  Jellyfin token expires (server invalidates after a long idle).
+- **Jellyfin admin password** — the hidden `jellyfin` admin user still
+  has password `jellyfin`. Rotate via Jellyfin web UI.
 
 Two halves:
 
@@ -407,4 +443,4 @@ the test content for the dev session.
 
 ---
 
-_Last updated: 2026-05-06 (Phase 7 shipped — Settings live with quality wired into player; ready for Phase 8 Deploy)._
+_Last updated: 2026-05-06 (Phase 8 shipped — `https://prime.athion.me/` is live. All planned phases complete.)._

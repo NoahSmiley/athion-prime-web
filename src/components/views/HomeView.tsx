@@ -56,7 +56,6 @@ export function HomeView({ onNavigate }: { onNavigate: (view: View) => void }) {
             onSelect={select}
             seeAll={() => onNavigate({ kind: "library", library: "movies", subview: "collections" })}
           />
-          <PlaceholderRow title="Live TV" body="Coming in Phase 6 — Xtream-backed channel browser." />
         </div>
       </div>
     </div>
@@ -178,13 +177,3 @@ function RowSkeleton() {
   );
 }
 
-function PlaceholderRow({ title, body }: { title: string; body: string }) {
-  return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-base font-medium text-foreground">{title}</h2>
-      <div className="rounded-md border border-dashed border-border/60 bg-card/30 px-6 py-8 text-center">
-        <p className="text-sm text-muted-foreground">{body}</p>
-      </div>
-    </section>
-  );
-}
