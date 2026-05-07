@@ -57,19 +57,30 @@ export function LiveTvView() {
 
     let cancelled = false;
     setLoadingStreams(true);
-    Promise.all(section.categoryIds.map((id) => xtream.getLiveStreams(id)))
+    // Fetch each category independently — one upstream flake shouldn't
+    // take down the whole section. allSettled means we get whatever did
+    // load even if a category times out or 503s.
+    Promise.allSettled(section.categoryIds.map((id) => xtream.getLiveStreams(id)))
       .then((results) => {
         if (cancelled) return;
+        const failures: string[] = [];
+        const ok: XtreamStream[] = [];
+        results.forEach((r, i) => {
+          if (r.status === "fulfilled") {
+            ok.push(...r.value);
+          } else {
+            failures.push(section.categoryIds[i]);
+          }
+        });
+        if (failures.length) {
+          // eslint-disable-next-line no-console
+          console.warn(`[live-tv] dropped ${failures.length} failed categor${failures.length === 1 ? "y" : "ies"}: ${failures.join(", ")}`);
+        }
         // Some Xtream providers emit divider rows like "##### NAME #####" as
         // fake channels for visual grouping in legacy clients. Strip them.
-        const filtered = results.flat().filter((s) => !/^#+\s/.test(s.name));
+        const filtered = ok.filter((s) => !/^#+\s/.test(s.name));
         const all = dedupeByName(filtered);
         setStreamsBySection((prev) => ({ ...prev, [activeSection]: all }));
-        setLoadingStreams(false);
-      })
-      .catch((e: unknown) => {
-        if (cancelled) return;
-        setError(e instanceof Error ? e.message : String(e));
         setLoadingStreams(false);
       });
     return () => {
@@ -203,35 +214,110 @@ function dedupeByName(streams: XtreamStream[]): XtreamStream[] {
 }
 
 /**
- * Single channel card — logo (or letter fallback) + name + current EPG title.
- * EPG is loaded lazily on first render of the card.
+ * Tiny in-process EPG fetcher: caps concurrency at MAX_INFLIGHT so we don't
+ * fire 400+ requests when a section first opens. FIFO queue, deduped per
+ * stream id so cards remounted on scroll don't refetch.
  */
-function ChannelCard({ stream, onSelect }: { stream: XtreamStream; onSelect: (s: XtreamStream) => void }) {
-  const [epg, setEpg] = useState<XtreamEPGEntry | null>(null);
+const MAX_INFLIGHT = 6;
+const epgCache = new Map<number, XtreamEPGEntry | null>();
+const epgPending = new Map<number, Promise<XtreamEPGEntry | null>>();
+const epgQueue: Array<() => void> = [];
+let epgInflight = 0;
 
-  useEffect(() => {
-    let cancelled = false;
-    xtream
-      .getEPG(stream.stream_id)
-      .then((entries) => {
-        if (cancelled) return;
+function pumpQueue() {
+  while (epgInflight < MAX_INFLIGHT && epgQueue.length > 0) {
+    const next = epgQueue.shift();
+    next?.();
+  }
+}
+
+function fetchCurrentEPG(streamId: number): Promise<XtreamEPGEntry | null> {
+  if (epgCache.has(streamId)) return Promise.resolve(epgCache.get(streamId) ?? null);
+  const existing = epgPending.get(streamId);
+  if (existing) return existing;
+
+  const p = new Promise<XtreamEPGEntry | null>((resolve) => {
+    const run = async () => {
+      epgInflight++;
+      try {
+        const entries = await xtream.getEPG(streamId);
         const now = Date.now();
         const current = entries.find((e) => {
           const start = parseUtcXtream(e.start);
           const end = parseUtcXtream(e.end);
           if (!start || !end) return false;
           return now >= start && now < end;
-        });
-        setEpg(current ?? null);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
+        }) ?? null;
+        epgCache.set(streamId, current);
+        resolve(current);
+      } catch {
+        epgCache.set(streamId, null);
+        resolve(null);
+      } finally {
+        epgInflight--;
+        epgPending.delete(streamId);
+        pumpQueue();
+      }
     };
+    epgQueue.push(run);
+    pumpQueue();
+  });
+  epgPending.set(streamId, p);
+  return p;
+}
+
+/**
+ * Single channel card — logo (or letter fallback) + name + current EPG title.
+ * EPG is fetched lazily, only when the card scrolls into view, capped to
+ * MAX_INFLIGHT in-flight requests so we don't slam the proxy.
+ */
+function ChannelCard({ stream, onSelect }: { stream: XtreamStream; onSelect: (s: XtreamStream) => void }) {
+  const [epg, setEpg] = useState<XtreamEPGEntry | null>(epgCache.get(stream.stream_id) ?? null);
+  const cardRef = useRef<HTMLButtonElement | null>(null);
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    if (epgCache.has(stream.stream_id)) return; // already resolved
+    const node = cardRef.current;
+    if (!node) return;
+
+    const start = () => {
+      if (startedRef.current) return;
+      startedRef.current = true;
+      let cancelled = false;
+      fetchCurrentEPG(stream.stream_id).then((current) => {
+        if (!cancelled) setEpg(current);
+      });
+      return () => {
+        cancelled = true;
+      };
+    };
+
+    if (typeof IntersectionObserver === "undefined") {
+      // Safety net: trigger immediately if IO isn't available.
+      start();
+      return;
+    }
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            start();
+            io.disconnect();
+            break;
+          }
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    io.observe(node);
+    return () => io.disconnect();
   }, [stream.stream_id]);
 
   return (
     <button
+      ref={cardRef}
       type="button"
       onClick={() => onSelect(stream)}
       className="group flex flex-col gap-2 text-left focus:outline-none"
