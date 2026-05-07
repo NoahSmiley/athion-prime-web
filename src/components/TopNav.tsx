@@ -115,12 +115,14 @@ export function TopNav({
                 with the rest of the nav. */}
             <span
               style={{
-                background: "#0e7490",
+                background: "#0891b2",
                 color: "#fff",
                 padding: "2px 6px",
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: 700,
                 lineHeight: 1,
+                letterSpacing: 0.6,
+                textTransform: "uppercase",
                 borderRadius: 2,
                 display: "inline-block",
               }}
