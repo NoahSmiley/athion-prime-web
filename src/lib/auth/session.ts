@@ -44,6 +44,10 @@ export async function fetchJellyfinSession(): Promise<JellyfinSession | null> {
 
   const res = await fetch(`${TOKEN_ENDPOINT}/api/prime/jellyfin-token`, {
     credentials: "include",
+    // Bypass the HTTP cache — a cached token response can outlive the token
+    // itself (Jellyfin revokes it when the same device re-authenticates),
+    // which leaves the app stuck on 401s until the cache entry expires.
+    cache: "no-store",
   });
 
   if (res.status === 401) return null;
