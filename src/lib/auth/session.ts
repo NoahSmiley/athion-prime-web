@@ -32,7 +32,12 @@ const LOGIN_URL =
  * Throws on transport / 5xx errors.
  */
 export async function fetchJellyfinSession(): Promise<JellyfinSession | null> {
-  const devOverride = import.meta.env.VITE_PRIME_DEV_SESSION as string | undefined;
+  // Dev-only escape hatch. Guarded by DEV so a stray env file can never bake
+  // a hardcoded LAN session into a production bundle again — that bricks the
+  // deployed app with unrecoverable 401s once the frozen token is revoked.
+  const devOverride = import.meta.env.DEV
+    ? (import.meta.env.VITE_PRIME_DEV_SESSION as string | undefined)
+    : undefined;
   if (devOverride) {
     try {
       return JSON.parse(devOverride) as JellyfinSession;
