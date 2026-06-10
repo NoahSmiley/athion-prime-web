@@ -514,7 +514,15 @@ function ChannelPlayer({ stream, onClose }: { stream: XtreamStream; onClose: () 
       const HlsModule = (await import("hls.js")).default;
       if (cancelled) return;
       if (HlsModule.isSupported()) {
-        const h = new HlsModule({ enableWorker: true, lowLatencyMode: true });
+        const h = new HlsModule({
+          enableWorker: true,
+          lowLatencyMode: true,
+          // The playlist lives on athion.me (cross-origin) behind the shared
+          // auth_token cookie — hls.js won't attach it without credentials.
+          xhrSetup: (xhr) => {
+            xhr.withCredentials = true;
+          },
+        });
         h.loadSource(url);
         h.attachMedia(video);
         h.on(HlsModule.Events.ERROR, (_e, data) => {
